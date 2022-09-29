@@ -13,6 +13,8 @@ judge varchar(255),
 hearing_result varchar(1000),
 decision_link varchar(1000),
 case_link varchar(1000),
+row_hash varchar(100),
 load_dttm datetime
 );
 
+alter table dm.court_cases add index idx_case_num (case_num);
