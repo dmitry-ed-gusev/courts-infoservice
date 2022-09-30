@@ -39,9 +39,14 @@ def load_to_dm():
 
 def read_courts_config() -> list[dict[str, str]]:
     result = []
-    cursor.execute("""select link, title, alias
-            from dm.court_scrap_config
-            where not skip""")
+    cursor.execute("""
+            select cfg.link, cfg.title, cfg.alias
+            from dm.court_scrap_config cfg
+            left join dm.court_cases_scrap_log log
+            on cfg.alias = log.court
+            where not skip
+            and (log.court is null or date_add(now(), interval -1 day) > log.load_dttm)
+            """)
     result_1 = cursor.fetchall()
     if result_1:
         for row1 in result_1:
@@ -60,7 +65,7 @@ def clean_stage_table():
 
 
 def load_to_stage(data: list[dict[str, str]]) -> None:
-    """reads file list from dir and calls load method"""
+    """loads parsed data to stage"""
     sql_part1 = f"INSERT INTO {config.STAGE_TABLE} ("
     sql_part2 = ""
 
@@ -154,6 +159,9 @@ def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config:
                 load_to_stage(result)
                 result = []
         load_to_stage(result)
+        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
+        cursor.execute(sql)
+        conn.commit()
 
 
 def parse_args() -> argparse.Namespace:

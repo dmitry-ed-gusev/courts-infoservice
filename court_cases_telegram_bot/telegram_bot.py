@@ -109,6 +109,32 @@ async def remove_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
     conn.close()
 
 
+async def get_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """shows active subs"""
+    account_id = str(update.message.from_user.id)
+    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
+                           port=config.MYSQL_CONNECT["port"],
+                           user=config.MYSQL_CONNECT["user"],
+                           passwd=config.MYSQL_CONNECT["passwd"]
+                           )
+    cursor = conn.cursor()
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+
+    result = cursor.fetchall()
+    message = ""
+    for row in result:
+        message = "Последнее обновление: " + row[1] + "\nСлушания от " + row[2] + " до " + row[
+            3] + ".\nВсего записей: " + str(row[0]) + "."
+
+    await update.effective_message.reply_text(message)
+    cursor.close()
+    conn.close()
+
+
 async def show_subscriptions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """shows active subs"""
     account_id = str(update.message.from_user.id)
@@ -184,7 +210,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Для подписки на уведомления по делу - /subscribe <номер дела>.\n"
         "Для прекращения подписки по делу - /unsubscribe <номер дела>.\n"
         "Для прекращения всех подписок - /unsubscribe all.\n"
-        "Для просмотра списка подписок - /list."
+        "Для просмотра списка подписок - /list.\n"
+        "Для просмотра статистики базы - /status."
     )
 
 
@@ -203,6 +230,8 @@ def main() -> None:
     application.add_handler(CommandHandler("subscribe", add_subscription))
 
     application.add_handler(CommandHandler("unsubscribe", remove_subscription))
+
+    application.add_handler(CommandHandler("status", get_status))
 
     # schedule notification job
     application.job_queue.run_repeating(check_subscriptions, interval=config.JOB_SCHEDULE_INTERVAL)
