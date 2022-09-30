@@ -40,12 +40,15 @@ def load_to_dm():
 def read_courts_config() -> list[dict[str, str]]:
     result = []
     cursor.execute("""
+            with max_load_date as (
+            select court, max(load_dttm) as load_dttm from dm.court_cases_scrap_log group by court
+            )
             select cfg.link, cfg.title, cfg.alias
             from dm.court_scrap_config cfg
-            left join dm.court_cases_scrap_log log
-            on cfg.alias = log.court
+                left join max_load_date log
+            	    on cfg.alias = log.court
             where not skip
-            and (log.court is null or date_add(now(), interval -1 day) > log.load_dttm)
+            	and (log.court is null or date_add(now(), interval -1 day) > log.load_dttm)
             """)
     result_1 = cursor.fetchall()
     if result_1:
