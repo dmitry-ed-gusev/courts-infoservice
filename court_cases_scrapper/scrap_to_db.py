@@ -48,7 +48,7 @@ def read_courts_config() -> list[dict[str, str]]:
                 left join max_load_date log
             	    on cfg.alias = log.court
             where not skip
-            	and (log.court is null or date_add(now(), interval -1 day) > log.load_dttm)
+            	and (log.court is null or date_add(now(), interval -23 hour) > log.load_dttm)
             """)
     result_1 = cursor.fetchall()
     if result_1:
@@ -83,7 +83,7 @@ def load_to_stage(data: list[dict[str, str]]) -> None:
 
     logger.debug(sql_statement)
 
-    logger.info("Data load start")
+    logger.info("Stage data load start")
     for idx_r, row in enumerate(data):
         values = []
         for idx_c, col in enumerate(config.STAGE_MAPPING):
@@ -96,8 +96,9 @@ def load_to_stage(data: list[dict[str, str]]) -> None:
             conn.commit()
             logger.debug("Commit " + str(idx_r))
     conn.commit()
-
-    logger.info("Data load completed")
+    cursor.execute("call stage.p_update_court_cases_row_hash()")
+    conn.commit()
+    logger.info("Stage data load completed")
 
 
 def daterange(date1: str, date2: str) -> list[datetime]:
@@ -115,7 +116,6 @@ def parse_page(page: requests.Response, court: dict, check_date: str) -> list[di
     result = []
     soup = BeautifulSoup(page.content, 'html.parser')
     tables = soup.find_all("div", id="tablcont")
-    logger.info("Processing " + court.get("alias") + ", date " + check_date)
     # <div id="tablcont">
     for table in tables:
         section_name = ""
@@ -149,10 +149,12 @@ def parse_page(page: requests.Response, court: dict, check_date: str) -> list[di
 def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config: list[dict[str, str]]):
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
-    for court in courts_config:
+    for idx, court in enumerate(courts_config):
+        clean_stage_table()
         if court_filter and court.get("alias") != court_filter:
             continue
         result = []
+        logger.info("Processing " + court.get("alias") + ", " + str(idx+1) + "/" + str(len(courts_config)))
         for date in daterange(date_from, date_to):
 
             check_date = date.strftime("%d.%m.%Y")
@@ -162,6 +164,7 @@ def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config:
                 load_to_stage(result)
                 result = []
         load_to_stage(result)
+        load_to_dm()
         sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
         cursor.execute(sql)
         conn.commit()
@@ -184,9 +187,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     courts_config = read_courts_config()
-    clean_stage_table()
     scrap_courts(args.date_from, args.date_to, args.court, courts_config)
-    load_to_dm()
 
 
 if __name__ == "__main__":
