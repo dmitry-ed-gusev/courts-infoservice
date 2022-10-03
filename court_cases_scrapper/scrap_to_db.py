@@ -43,7 +43,7 @@ def read_courts_config() -> list[dict[str, str]]:
             with max_load_date as (
             select court, max(load_dttm) as load_dttm from dm.court_cases_scrap_log group by court
             )
-            select cfg.link, cfg.title, cfg.alias
+            select cfg.link, cfg.title, cfg.alias, cfg.server_num, cfg.parser_type
             from dm.court_scrap_config cfg
                 left join max_load_date log
             	    on cfg.alias = log.court
@@ -53,7 +53,13 @@ def read_courts_config() -> list[dict[str, str]]:
     result_1 = cursor.fetchall()
     if result_1:
         for row1 in result_1:
-            result.append({"link": row1[0], "title": row1[1], "alias": row1[2]})
+            result.append(
+                {"link": row1[0],
+                 "title": row1[1],
+                 "alias": row1[2],
+                 "server_num": row1[3],
+                 "parser_type": row1[4]}
+            )
 
     return result
 
@@ -111,7 +117,7 @@ def daterange(date1: str, date2: str) -> list[datetime]:
     return result
 
 
-def parse_page(page: requests.Response, court: dict, check_date: str) -> list[dict[str, str]]:
+def parse_page_1(page: requests.Response, court: dict, check_date: str) -> list[dict[str, str]]:
     """parses output page"""
     result = []
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -150,24 +156,26 @@ def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config:
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
     for idx, court in enumerate(courts_config):
-        clean_stage_table()
         if court_filter and court.get("alias") != court_filter:
             continue
         result = []
-        logger.info("Processing " + court.get("alias") + ", " + str(idx+1) + "/" + str(len(courts_config)))
-        for date in daterange(date_from, date_to):
+        clean_stage_table()
+        if court.get("parser_type") == "1":
+            logger.info("Processing " + court.get("alias") + ", " + str(idx + 1) + "/" + str(len(courts_config)))
+            for date in daterange(date_from, date_to):
 
-            check_date = date.strftime("%d.%m.%Y")
-            page = session.get(court.get("link") + "&H_date=" + check_date)
-            result = result + parse_page(page, court, check_date)
-            if len(result) > 50000:
-                load_to_stage(result)
-                result = []
-        load_to_stage(result)
-        load_to_dm()
-        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
-        cursor.execute(sql)
-        conn.commit()
+                check_date = date.strftime("%d.%m.%Y")
+                page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
+                    "server_num") + "&H_date=" + check_date)
+                result = result + parse_page_1(page, court, check_date)
+                if len(result) > 50000:
+                    load_to_stage(result)
+                    result = []
+            load_to_stage(result)
+            load_to_dm()
+            sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
+            cursor.execute(sql)
+            conn.commit()
 
 
 def parse_args() -> argparse.Namespace:
