@@ -53,12 +53,13 @@ begin
 
     -- insert new records from stage
     insert into dm.court_cases (court, check_date, section_name, order_num, case_num, hearing_time,
-        hearing_place, case_info, judge, hearing_result, decision_link, case_link, row_hash, load_dttm)
+        hearing_place, case_info, stage, judge, hearing_result, decision_link, case_link, row_hash, load_dttm)
     select src.court,
             str_to_date(src.check_date, '%d.%m.%Y') as check_date,
             src.section_name,
             cast(trim(both '.' from src.order_num) as DECIMAL) as order_num_dec,
-            src.case_num, src.hearing_time, src.hearing_place, src.case_info, src.judge,
+            src.case_num, src.hearing_time, src.hearing_place, src.case_info,
+            src.stage, src.judge,
             src.hearing_result, src.decision_link,
             src.case_link, src.row_hash, src.load_dttm
     from stage.stg_court_cases src

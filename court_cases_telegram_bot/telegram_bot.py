@@ -175,7 +175,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                            )
     cursor = conn.cursor()
     cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
-                case_info,judge, hearing_result, decision_link, case_link 
+                case_info, stage, judge, hearing_result, decision_link, case_link 
                 from dm.court_cases
                 where lower(case_num) like lower(%(case_num)s)
                 order by check_date desc
@@ -190,12 +190,21 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     for row in result:
         message = "Суд: " + str(row[0]) + "\nДата заседания: " + row[1].isoformat() + "\nКатегория: " + str(
-            row[2]) + "\nПорядковый номер: " + str(
-            row[3]) + "\nНомер дела: " + str(row[4]) + "\nВремя слушания: " + str(
-            row[5]) + "\nМесто проведения: " + str(
-            row[6]) + "\nИнформация по делу: " + str(row[7]) + "\nСудья: " + str(
-            row[8]) + "\nРезультат слушания: " + str(
-            row[9]) + "\nСудебный акт: " + str(row[10]) + "\nСсылка на дело: " + str(row[11])
+                row[2]) + "\nПорядковый номер: " + str(row[3]) + "\nНомер дела: " + str(
+                row[4]) + "\nВремя слушания: " + str(row[5])
+        if row[6] and len(row[6]) > 0:
+            message = message + "\nМесто проведения: " + str(row[6])
+        if row[7] and len(row[7]) > 0:
+            message = message + "\nИнформация по делу: " + str(row[7])
+        if row[8] and len(row[8]) > 0:
+            message = message + "\nСтадия дела: " + str(row[8])
+        if row[9] and len(row[9]) > 0:
+            message = message + "\nСудья: " + str(row[9])
+        if row[10] and len(row[10]) > 0:
+            message = message + "\nРезультат слушания: " + str(row[10])
+        if row[11] and len(row[11]) > 0:
+            message = message + "\nСудебный акт: " + str(row[11])
+        message = message + "\nСсылка на дело: " + str(row[12])
         await update.effective_message.reply_text(message)
     cursor.close()
     conn.close()
