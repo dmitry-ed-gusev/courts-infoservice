@@ -1,3 +1,4 @@
+from types import coroutine
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -7,7 +8,7 @@ from telegram.ext import (
 import pymysql
 import logging
 
-from court_cases_telegram_bot import config
+from courts.info.config import config
 
 # Enable logging
 logging.basicConfig(
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def form_message_from_db_response(row) -> str:
-    message = "Суд: " + str(row[0]) + "\nДата заседания: " + row[1].isoformat() + "\nКатегория: " + str(
+    message = "Суд: " + str(row[0]) + "\nДата заседания: " + row[1].isoformat()cd coroutine + "\nКатегория: " + str(
         row[2]) + "\nПорядковый номер: " + str(row[3]) + "\nНомер дела: " + str(
         row[4]) + "\nВремя слушания: " + str(row[5])
     if row[6] and len(row[6]) > 0:

@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-# mypackage = {editable = true, path = "."}
+"courts.info" = {editable = true, path = "."}
 
 [dev-packages]
 ipykernel = "*"
@@ -14,14 +14,17 @@ pytest = "*"
 pytest-cov = "*"
 pytest-mock = "*"
 responses = "*"
-mypy = "*"
 flake8 = "*"
 black = "*"
 pre-commit = "*"
 build = "*"
 sphinx = "*"
 twine = "*"
+hypothesis = "*"
+mypy = "*"
 types-six = "*"
+types-requests = "*"
+types-PyMySql = "*"
 
 [requires]
 python_version = "3.10"

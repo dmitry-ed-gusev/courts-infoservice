@@ -1,0 +1,137 @@
+[1msrc/courts/info/telegram_bot.py[m[36m:[m47[36m:[m74[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""select account_id, case_num, last_notification_dttm 
+                    from dm.telegram_bot_subscriptions""")
+                                                                         ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m56[36m:[m111[36m:[m [1m[31mE501[m line too long (115 > 110 characters)
+        cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
+                        case_info, stage, judge, hearing_result, decision_link, case_link 
+                        from dm.court_cases
+                        where lower(case_num) like lower(%(case_num)s)
+                        and load_dttm > %(last_check_dttm)s
+                        order by check_date desc
+                        limit %(limit)s""",
+                                                                                                              ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m57[36m:[m90[36m:[m [1m[31mW291[m trailing whitespace
+        cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
+                        case_info, stage, judge, hearing_result, decision_link, case_link 
+                        from dm.court_cases
+                        where lower(case_num) like lower(%(case_num)s)
+                        and load_dttm > %(last_check_dttm)s
+                        order by check_date desc
+                        limit %(limit)s""",
+                                                                                         ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m70[36m:[m67[36m:[m [1m[31mW291[m trailing whitespace
+            cursor.execute("""update dm.telegram_bot_subscriptions 
+                            set last_notification_dttm = now()
+                            where account_id = %(account_id)s and case_num = %(case_num)s""",
+                                                                  ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m91[36m:[m74[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""insert into dm.telegram_bot_subscriptions (account_id, case_num, last_notification_dttm)
+            select %(account_id)s, lower(%(case_num)s), now() from dual
+            where not exists (select * from dm.telegram_bot_subscriptions 
+            where account_id = %(account_id)s and lower(case_num) = lower(%(case_num)s) limit 1)""",
+                                                                         ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m111[36m:[m68[36m:[m [1m[31mW291[m trailing whitespace
+        cursor.execute("""delete from dm.telegram_bot_subscriptions 
+                            where account_id = %(account_id)s""",
+                                                                   ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m115[36m:[m51[36m:[m [1m[31mF541[m f-string is missing placeholders
+        await update.effective_message.reply_text(f"Все подписки удалены. Вы больше не будете получать уведомлений.")
+                                                  ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m115[36m:[m111[36m:[m [1m[31mE501[m line too long (117 > 110 characters)
+        await update.effective_message.reply_text(f"Все подписки удалены. Вы больше не будете получать уведомлений.")
+                                                                                                              ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m117[36m:[m68[36m:[m [1m[31mW291[m trailing whitespace
+        cursor.execute("""delete from dm.telegram_bot_subscriptions 
+                    where account_id = %(account_id)s and lower(case_num) = lower(%(case_num)s)""",
+                                                                   ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m128[36m:[m5[36m:[m [1m[31mF841[m local variable 'account_id' is assigned to but never used
+    account_id = str(update.message.from_user.id)
+    ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m135[36m:[m53[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+                                                    ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m136[36m:[m1[36m:[m [1m[31mW191[m indentation contains tabs
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m136[36m:[m1[36m:[m [1m[31mE101[m indentation contains mixed spaces and tabs
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m136[36m:[m81[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+                                                     
+	                         ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m137[36m:[m1[36m:[m [1m[31mW191[m indentation contains tabs
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m137[36m:[m1[36m:[m [1m[31mE101[m indentation contains mixed spaces and tabs
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m137[36m:[m68[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+                                                     
+	            ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m138[36m:[m1[36m:[m [1m[31mW191[m indentation contains tabs
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m138[36m:[m1[36m:[m [1m[31mE101[m indentation contains mixed spaces and tabs
+    cursor.execute("""select count(*) as total_rows, 
+	                date_format(max(load_dttm),'%d.%m.%Y %H:%i') as last_load_dttm, 
+	                date_format(min(check_date),'%d.%m.%Y') as min_dt, 
+	                date_format(max(check_date),'%d.%m.%Y') as max_dt
+                    from dm.court_cases""")
+^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m161[36m:[m73[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""select case_num from dm.telegram_bot_subscriptions 
+                where account_id = %(account_id)s""",
+                                                                        ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m191[36m:[m111[36m:[m [1m[31mE501[m line too long (111 > 110 characters)
+    cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
+                case_info, stage, judge, hearing_result, decision_link, case_link 
+                from dm.court_cases
+                where lower(case_num) like lower(%(case_num)s)
+                order by check_date desc
+                limit %(limit)s""", {"case_num": case_num, "limit": config.OUTPUT_LIMIT})
+                                                                                                              ^
+[1msrc/courts/info/telegram_bot.py[m[36m:[m192[36m:[m82[36m:[m [1m[31mW291[m trailing whitespace
+    cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
+                case_info, stage, judge, hearing_result, decision_link, case_link 
+                from dm.court_cases
+                where lower(case_num) like lower(%(case_num)s)
+                order by check_date desc
+                limit %(limit)s""", {"case_num": case_num, "limit": config.OUTPUT_LIMIT})
+                                                                                 ^
+[1msrc/courts/info/__init__.py[m[36m:[m1[36m:[m18[36m:[m [1m[31mW292[m no newline at end of file
+VERSION = "1.0.0"                 ^

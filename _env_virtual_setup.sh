@@ -85,15 +85,15 @@ printf "We are here: [%s]\n" "$(pwd)"
 cd ${BOT_DIR}
 printf "\nProcessing Telegram Bot\n"
 printf "We are here: [%s]\n" "$(pwd)"
-printf "!!!\n"
+setup_virtual_env
 cd ..
 
 # -- go to the Scraper directory
-cd ${SCRAPER_DIR}
-printf "\nProcessing Scraper\n"
-printf "We are here: [%s]\n" "$(pwd)"
-printf "!!!\n"
-cd ..
+# cd ${SCRAPER_DIR}
+# printf "\nProcessing Scraper\n"
+# printf "We are here: [%s]\n" "$(pwd)"
+# printf "!!!\n"
+# cd ..
 
 # -- we returned to the root project directory
 printf "\nReturned to the project root: [%s]\n\n" "$(pwd)"
