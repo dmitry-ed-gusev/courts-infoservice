@@ -1,0 +1,8 @@
+[flake8]
+# - list of ignored issues (E501 - too long line)
+#ignore = E501
+# - max cognitive complexity for statements
+max-complexity = 10
+# - adjustment for [flake8] to align with line length for [black] tool (it uses 88 chars by default)
+# - we use the value = 110 as a default for the project
+max-line-length = 110
