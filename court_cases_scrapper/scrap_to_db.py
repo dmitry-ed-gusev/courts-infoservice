@@ -5,7 +5,9 @@ import argparse
 import re
 import threading
 from datetime import datetime, timedelta
-from typing import Any
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 import pymysql
 import requests
@@ -128,6 +130,7 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
     """parses output page"""
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
+    logger.debug(f"Date {check_date}")
     page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
         "server_num") + "&H_date=" + check_date)
     result = []
@@ -171,7 +174,6 @@ def parser_type_1(court: dict[str, str], date_from: str, date_to: str, ) -> None
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor:
         for date in daterange(date_from, date_to):
             check_date = date.strftime("%d.%m.%Y")
-            logger.debug(f"Date {check_date}")
             future = executor.submit(parse_page_1, court, check_date)
             futures.append(future)
 
@@ -226,7 +228,7 @@ def parse_page_2(court: dict, check_date: str) -> list[dict[str, str]]:
                             result_row["col" + str(idx_r)] = value
                             if row.find(href=True):
                                 result_row["col" + str(idx_r) + "_link"] = "https://mos-gorsud.ru" + \
-                                                                       row.find(href=True)["href"]
+                                                                           row.find(href=True)["href"]
 
                     result_row["check_date"] = check_date
                     result_row["court"] = court.get("title")
@@ -267,6 +269,77 @@ def parser_type_2(court: dict[str, str], date_from: str, date_to: str, ) -> None
         conn.commit()
 
 
+def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
+    """parses output js page"""
+    result = []
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--window-size=1920,1024")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--enable-javascript")
+    options.add_argument("--user-agent " + config.USER_AGENT)
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    logger.debug(f"Date {check_date}")
+    driver.get(
+        court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date)
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'html.parser')
+    tables = soup.find_all("div", id="resultTable")
+    # <div id="resultTable">
+    for table in tables:
+        section_name = ""
+        sections = table.find_all("tr")
+        # tr
+        for idx, section in enumerate(sections):
+            if idx == 0:
+                continue
+            # setting new section
+            if len(section.find_all("td")) == 1:
+                for idx_r, row in enumerate(section.find_all("td")):
+                    section_name = row.text.title()
+            # appending row
+            else:
+                result_row = {"section_name": section_name}
+                # td
+                for idx_r, row in enumerate(section.find_all("td")):
+                    if row.text:
+                        result_row["col" + str(idx_r)] = row.text.strip()
+                    else:
+                        result_row["col" + str(idx_r)] = str(row.contents).strip()
+                    if row.find(href=True):
+                        result_row["col" + str(idx_r) + "_link"] = court.get("link") + row.find(href=True)["href"]
+
+                result_row["check_date"] = check_date
+                result_row["court"] = court.get("title")
+                result.append(result_row)
+    return result
+
+
+def parser_type_3(court: dict[str, str], date_from: str, date_to: str, ) -> None:
+    """Парсер тип 3"""
+    result = []
+    futures = []  # list to store future results of threads
+    clean_stage_table()
+    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3) as executor:
+        for date in daterange(date_from, date_to):
+            check_date = date.strftime("%d.%m.%Y")
+            future = executor.submit(parse_page_3, court, check_date)
+            futures.append(future)
+
+        for task in as_completed(futures):
+            result_part = task.result()
+            result.extend(result_part)
+
+    if len(result) > 0:
+        load_to_stage(result, config.STAGE_MAPPING_3)
+        load_to_dm()
+        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
+        cursor.execute(sql)
+        conn.commit()
+
+
 def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config: list[dict[str, str]]):
     for idx, court in enumerate(courts_config):
         if court_filter and court.get("alias") != court_filter:
@@ -277,6 +350,8 @@ def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config:
             parser_type_1(court, date_from, date_to)
         elif court.get("parser_type") == "2":
             parser_type_2(court, date_from, date_to)
+        elif court.get("parser_type") == "3":
+            parser_type_3(court, date_from, date_to)
 
 
 def parse_args() -> argparse.Namespace:

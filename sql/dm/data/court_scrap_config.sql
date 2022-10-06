@@ -98,7 +98,7 @@ insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://korenovsk--krd.sudrf.ru', 'Кореновский районный суд (Краснодарский край)', 'krd-krn', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://krasnoarmeisk--krd.sudrf.ru', 'Красноармейский районный суд (Краснодарский край)', 'krd-kra', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://gvs--krd.sudrf.ru', 'Краснодарский гарнизонный военный суд (Краснодарский край)', 'krd-gvs', False, '1', '1');
-insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://kraevoi--krd.sudrf.ru', 'Краснодарский краевой суд (Краснодарский край)', 'krd-kks', True, '1', '');
+insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://kraevoi--krd.sudrf.ru', 'Краснодарский краевой суд (Краснодарский край)', 'krd-kks', False, '1', '3');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://kropotkin-gor--krd.sudrf.ru', 'Кропоткинский городской суд (Краснодарский край)', 'krd-krp', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://krilovskoy--krd.sudrf.ru', 'Крыловской районный суд (Краснодарский край)', 'krd-krl', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://krimsk--krd.sudrf.ru', 'Крымский районный суд (Краснодарский край)', 'krd-krymrs', False, '1', '1');
