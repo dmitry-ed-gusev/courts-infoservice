@@ -109,6 +109,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+*.env
 
 # Spyder project settings
 .spyderproject
@@ -129,3 +130,8 @@ dmypy.json
 .pyre/
 .idea/
 output/
+
+# some custom reports
+.reports/
+.report
+
