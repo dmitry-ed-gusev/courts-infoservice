@@ -3,6 +3,7 @@ parse court data and load to stage
 """
 import time
 import re
+import os
 import threading
 from datetime import datetime, timedelta
 from selenium import webdriver
@@ -15,14 +16,14 @@ from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from court_cases_scrapper import config
+from court_cases_scraper import config
 
 logger.debug("Connecting to db")
 
-conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                       port=config.MYSQL_CONNECT["port"],
-                       user=config.MYSQL_CONNECT["user"],
-                       passwd=config.MYSQL_CONNECT["passwd"]
+conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                       port=int(os.environ['MYSQL_PORT']),
+                       user=os.environ['MYSQL_USER'],
+                       passwd=os.environ['MYSQL_PASS']
                        )
 
 logger.debug("Connected")
@@ -49,15 +50,8 @@ def load_to_dm():
 def read_courts_config() -> list[dict[str, str]]:
     result = []
     cursor.execute("""
-            with max_load_date as (
-            select court, max(load_dttm) as load_dttm from dm.court_cases_scrap_log group by court
-            )
-            select cfg.link, cfg.title, cfg.alias, cfg.server_num, cfg.parser_type
-            from dm.court_scrap_config cfg
-                left join max_load_date log
-            	    on cfg.alias = log.court
-            where not skip
-            	and (log.court is null or date_add(now(), interval -23 hour) > log.load_dttm)
+            select link, title, alias, server_num, parser_type
+            from dm.v_courts_to_refresh
             """)
     result_1 = cursor.fetchall()
     if result_1:

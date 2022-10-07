@@ -1,10 +1,11 @@
 """scrapper config"""
 
-OUTPUT_DIR = "../output"
 RANGE_BACKWARD = 7
 RANGE_FORWARD = 60
-WORKERS_COUNT_1 = 15
+WORKERS_COUNT_1 = 20
 WORKERS_COUNT_2 = 4
+WORKERS_COUNT_3 = 5
+WORKERS_COUNT_4 = 15
 
 COMMIT_INTERVAL = 1000
 
@@ -33,10 +34,37 @@ STAGE_MAPPING_2 = [{"name": "court", "mapping": "court"},
                    {"name": "case_num", "mapping": "col0"},
                    {"name": "hearing_time", "mapping": "hearing_time"},
                    {"name": "hearing_place", "mapping": "col4"},
+                   {"name": "stage", "mapping": "col5"},
                    {"name": "case_info", "mapping": "col1"},
                    {"name": "judge", "mapping": "col6"},
                    {"name": "hearing_result", "mapping": "col2"},
                    {"name": "case_link", "mapping": "col0_link"},
-                   {"name": "stage", "mapping": "col5"},
+                   {"name": "load_dttm", "constant": "now()"}
+                   ]
+
+STAGE_MAPPING_3 = [{"name": "court", "mapping": "court"},
+                   {"name": "check_date", "mapping": "check_date"},
+                   {"name": "section_name", "mapping": "section_name"},
+                   {"name": "order_num", "mapping": "col0"},
+                   {"name": "case_num", "mapping": "col1"},
+                   {"name": "hearing_time", "mapping": "col2"},
+                   {"name": "hearing_place", "mapping": "col4"},
+                   {"name": "case_info", "mapping": "col5"},
+                   {"name": "stage", "mapping": "col3"},
+                   {"name": "judge", "mapping": "col6"},
+                   {"name": "hearing_result", "mapping": "col7"},
+                   {"name": "decision_link", "mapping": "col8_link"},
+                   {"name": "case_link", "mapping": "col1_link"},
+                   {"name": "load_dttm", "constant": "now()"}
+                   ]
+
+STAGE_MAPPING_4 = [{"name": "court", "mapping": "court"},
+                   {"name": "check_date", "mapping": "check_date"},
+                   {"name": "section_name", "mapping": "section_name"},
+                   {"name": "order_num", "mapping": "order_num"},
+                   {"name": "case_num", "mapping": "case_num"},
+                   {"name": "case_info", "mapping": "case_info"},
+                   {"name": "stage", "mapping": "status"},
+                   {"name": "case_link", "mapping": "case_link"},
                    {"name": "load_dttm", "constant": "now()"}
                    ]
