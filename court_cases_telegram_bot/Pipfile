@@ -1,0 +1,33 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+"courts.info" = {editable = true, path = "."}
+
+[dev-packages]
+ipykernel = "*"
+mock = "*"
+nose2 = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+responses = "*"
+flake8 = "*"
+black = "*"
+pre-commit = "*"
+build = "*"
+sphinx = "*"
+twine = "*"
+hypothesis = "*"
+mypy = "*"
+types-six = "*"
+types-requests = "*"
+types-PyMySql = "*"
+
+[requires]
+python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true

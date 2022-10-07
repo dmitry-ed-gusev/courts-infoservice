@@ -1,18 +1,25 @@
-from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    ContextTypes,
-)
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+    Courts Info Service:: Telegram Bot main module.
+    Useful info:
+        - (.env support) https://github.com/theskumar/python-dotenv
+
+    Created:  Sokolov Sergei, 01.10.2022
+    Modified: Dmitrii Gusev, 06.10.2022
+"""
+
+import os
 import pymysql
 import logging
-
-from court_cases_telegram_bot import config
+from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
+from courts.info.config import bot_config
 
 # Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -38,10 +45,10 @@ def form_message_from_db_response(row) -> str:
 
 async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
     """sends notifications for subscriptions"""
-    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                           port=config.MYSQL_CONNECT["port"],
-                           user=config.MYSQL_CONNECT["user"],
-                           passwd=config.MYSQL_CONNECT["passwd"]
+    conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                           port=int(os.environ['MYSQL_PORT']),
+                           user=os.environ['MYSQL_USER'],
+                           passwd=os.environ['MYSQL_PASS']
                            )
     cursor = conn.cursor()
     cursor.execute("""select account_id, case_num, last_notification_dttm 
@@ -60,7 +67,7 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                         and load_dttm > %(last_check_dttm)s
                         order by check_date desc
                         limit %(limit)s""",
-                       {"case_num": str(subscription[1]), "limit": config.OUTPUT_LIMIT,
+                       {"case_num": str(subscription[1]), "limit": bot_config.OUTPUT_LIMIT,
                         "last_check_dttm": subscription[2]})
         result_1 = cursor.fetchall()
         if result_1:
@@ -80,10 +87,10 @@ async def add_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     """adds new subscription"""
     account_id = str(update.message.from_user.id)
     case_num = " ".join(context.args)
-    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                           port=config.MYSQL_CONNECT["port"],
-                           user=config.MYSQL_CONNECT["user"],
-                           passwd=config.MYSQL_CONNECT["passwd"]
+    conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                           port=int(os.environ['MYSQL_PORT']),
+                           user=os.environ['MYSQL_USER'],
+                           passwd=os.environ['MYSQL_PASS']
                            )
     cursor = conn.cursor()
     cursor.execute("""insert into dm.telegram_bot_subscriptions (account_id, case_num, last_notification_dttm)
@@ -101,10 +108,10 @@ async def remove_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
     """removes subscription"""
     account_id = str(update.message.from_user.id)
     case_num = " ".join(context.args)
-    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                           port=config.MYSQL_CONNECT["port"],
-                           user=config.MYSQL_CONNECT["user"],
-                           passwd=config.MYSQL_CONNECT["passwd"]
+    conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                           port=int(os.environ['MYSQL_PORT']),
+                           user=os.environ['MYSQL_USER'],
+                           passwd=os.environ['MYSQL_PASS']
                            )
     cursor = conn.cursor()
     if case_num == "all":
@@ -126,10 +133,10 @@ async def remove_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def get_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """shows active subs"""
     account_id = str(update.message.from_user.id)
-    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                           port=config.MYSQL_CONNECT["port"],
-                           user=config.MYSQL_CONNECT["user"],
-                           passwd=config.MYSQL_CONNECT["passwd"]
+    conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                           port=int(os.environ['MYSQL_PORT']),
+                           user=os.environ['MYSQL_USER'],
+                           passwd=os.environ['MYSQL_PASS']
                            )
     cursor = conn.cursor()
     cursor.execute("""select count(*) as total_rows, 
@@ -152,10 +159,10 @@ async def get_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 async def show_subscriptions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """shows active subs"""
     account_id = str(update.message.from_user.id)
-    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                           port=config.MYSQL_CONNECT["port"],
-                           user=config.MYSQL_CONNECT["user"],
-                           passwd=config.MYSQL_CONNECT["passwd"]
+    conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                           port=int(os.environ['MYSQL_PORT']),
+                           user=os.environ['MYSQL_USER'],
+                           passwd=os.environ['MYSQL_PASS']
                            )
     cursor = conn.cursor()
     cursor.execute("""select case_num from dm.telegram_bot_subscriptions 
@@ -182,10 +189,10 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # args should contain the case number
     case_num = " ".join(context.args)
-    conn = pymysql.connect(host=config.MYSQL_CONNECT["host"],
-                           port=config.MYSQL_CONNECT["port"],
-                           user=config.MYSQL_CONNECT["user"],
-                           passwd=config.MYSQL_CONNECT["passwd"]
+    conn = pymysql.connect(host=os.environ['MYSQL_HOST'],
+                           port=int(os.environ['MYSQL_PORT']),
+                           user=os.environ['MYSQL_USER'],
+                           passwd=os.environ['MYSQL_PASS']
                            )
     cursor = conn.cursor()
     cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
@@ -193,7 +200,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 from dm.court_cases
                 where lower(case_num) like lower(%(case_num)s)
                 order by check_date desc
-                limit %(limit)s""", {"case_num": case_num, "limit": config.OUTPUT_LIMIT})
+                limit %(limit)s""", {"case_num": case_num, "limit": bot_config.OUTPUT_LIMIT})
 
     result = cursor.fetchall()
 
@@ -225,24 +232,33 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 def main() -> None:
     """Run the bot."""
+
+    logger.info("Starting [Courts Info Service:: Telegram Bot].")
+
+    # Load environment variables from .env file from the project root dir
+    load_dotenv()
+
+    # debug output for loaded variables
+    logger.info(f"Loaded environment variables:\n"
+                f"API_TOKEN={'OK' if os.environ['API_TOKEN'] else '!!!'}\n"  # will raise KeyError if no token
+                f"MYSQL_HOST={os.getenv('MYSQL_HOST', 'Value Doesnt Exist!')}\n"
+                f"MYSQL_PORT={os.getenv('MYSQL_PORT', 'Value Doesnt Exist!')}\n"
+                f"MYSQL_USER={os.getenv('MYSQL_USER', 'Value Doesnt Exist!')}\n"
+                f"MYSQL_PASS={os.getenv('MYSQL_PASS', 'Value Doesnt Exist!')}\n")
+
     # Create the Application and pass it your bot's token.
-    application = Application.builder().token(config.API_TOKEN).build()
+    application = Application.builder().token(os.environ['API_TOKEN']).build()
 
     # Register the commands
     application.add_handler(CommandHandler(["start", "help"], start))
-
     application.add_handler(CommandHandler("search", search))
-
     application.add_handler(CommandHandler("list", show_subscriptions))
-
     application.add_handler(CommandHandler("subscribe", add_subscription))
-
     application.add_handler(CommandHandler("unsubscribe", remove_subscription))
-
     application.add_handler(CommandHandler("status", get_status))
 
     # schedule notification job
-    application.job_queue.run_repeating(check_subscriptions, interval=config.JOB_SCHEDULE_INTERVAL)
+    application.job_queue.run_repeating(check_subscriptions, interval=bot_config.JOB_SCHEDULE_INTERVAL)
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling()
