@@ -16,7 +16,7 @@
 set -euf -o pipefail
 
 # -- project modules directories
-SCRAPER_DIR='court_cases_scrapper'
+SCRAPER_DIR='court_cases_scraper'
 BOT_DIR='court_cases_telegram_bot'
 # -- verbose output mode
 VERBOSE="--verbose"
