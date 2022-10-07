@@ -1,7 +1,7 @@
 """
 parse court data and load to stage
 """
-import argparse
+import time
 import re
 import threading
 from datetime import datetime, timedelta
@@ -116,12 +116,10 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
     logger.debug("Stage data load completed")
 
 
-def daterange(date1: str, date2: str) -> list[datetime]:
-    d_date1 = datetime.strptime(date1, '%Y-%m-%d')
-    d_date2 = datetime.strptime(date2, '%Y-%m-%d')
+def daterange(date1: datetime, date2: datetime) -> list[datetime]:
     result = []
-    for n in range(int((d_date2 - d_date1).days) + 1):
-        result.append((d_date1 + timedelta(days=n)))
+    for n in range(int((date2 - date1).days) + 1):
+        result.append((date1 + timedelta(days=n)))
 
     return result
 
@@ -166,13 +164,14 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
     return result
 
 
-def parser_type_1(court: dict[str, str], date_from: str, date_to: str, ) -> None:
+def parser_type_1(court: dict[str, str]) -> None:
     """Парсер тип 1"""
     result = []
     futures = []  # list to store future results of threads
     clean_stage_table()
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor:
-        for date in daterange(date_from, date_to):
+        for date in daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
+                              datetime.now() + timedelta(days=config.RANGE_FORWARD)):
             check_date = date.strftime("%d.%m.%Y")
             future = executor.submit(parse_page_1, court, check_date)
             futures.append(future)
@@ -248,12 +247,13 @@ def parse_page_2(court: dict, check_date: str) -> list[dict[str, str]]:
     return result
 
 
-def parser_type_2(court: dict[str, str], date_from: str, date_to: str, ) -> None:
+def parser_type_2(court: dict[str, str]) -> None:
     """parser for mos gor sud"""
     result = []
     futures = []  # list to store future results of threads
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_2) as executor:
-        for date in daterange(date_from, date_to):
+        for date in daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
+                              datetime.now() + timedelta(days=config.RANGE_FORWARD)):
             check_date = date.strftime("%d.%m.%Y")
             future = executor.submit(parse_page_2, court, check_date)
             futures.append(future)
@@ -317,13 +317,14 @@ def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
     return result
 
 
-def parser_type_3(court: dict[str, str], date_from: str, date_to: str, ) -> None:
+def parser_type_3(court: dict[str, str]) -> None:
     """Парсер тип 3"""
     result = []
     futures = []  # list to store future results of threads
     clean_stage_table()
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3) as executor:
-        for date in daterange(date_from, date_to):
+        for date in daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
+                              datetime.now() + timedelta(days=config.RANGE_FORWARD)):
             check_date = date.strftime("%d.%m.%Y")
             future = executor.submit(parse_page_3, court, check_date)
             futures.append(future)
@@ -340,38 +341,131 @@ def parser_type_3(court: dict[str, str], date_from: str, date_to: str, ) -> None
         conn.commit()
 
 
-def scrap_courts(date_from: str, date_to: str, court_filter: str, courts_config: list[dict[str, str]]):
+def parse_page_4(court: dict, check_date: str, case_type: str) -> list[dict[str, str]]:
+    """parses output page"""
+    session = requests.Session()
+    result = []
+    order_num = 0
+    page_num = 1
+    logger.debug(f"Date {check_date}, case type {case_type}")
+    while True:
+        content_json = None
+        while True:
+            api_search = court.get("link") + \
+                         "/cases/api/search/?adm_person_type=all&article=&civil_person_type=" + \
+                         "all&court_number=&criminal_person_type=all&date_from=" + check_date + \
+                         "&date_to=" + check_date + "&full_name=&id=&page=" + str(page_num) + "&type=" + case_type
+            get_search = session.get(api_search)
+            if get_search.status_code == 200:
+                break
+            else:
+                time.sleep(2)
+
+        search_id = get_search.json()["id"]
+        finished = False
+        total_tries = 0
+        while not finished:
+            total_tries += 1
+            content = session.get(court.get("link") + "/cases/api/results/?id=" + search_id)
+            if content.status_code == 200:
+                content_json = content.json()
+                finished = content_json["finished"]
+            if not finished:
+                time.sleep(2)
+            if total_tries > 20:
+                break
+
+        for row in content_json["result"]["data"]:
+            order_num += 1
+            case_info = None
+            if case_type == "adm":
+                if row.get("offenders"):
+                    case_info = "Лицо, в отношении которого ведется производство по делу об административном правонарушении: " + \
+                                row.get("offenders")
+                    if row.get("article"):
+                        case_info = case_info + ". Статья КоАП РФ " + row.get("article")
+                section_name = "Дела об АП"
+            elif case_type == "criminal":
+                if row.get("defendants"):
+                    case_info = "Подсудимый: " + row.get("defendants")
+                    if row.get("article"):
+                        case_info = case_info + ". Статья УК РФ " + row.get("article")
+                section_name = "Уголовные дела"
+            else:
+                if case_type == "civil":
+                    section_name = "Гражданские дела"
+                else:
+                    section_name = "Административные дела"
+                case_info = None
+                if row.get("claimants"):
+                    case_info = "Истец: " + row.get("claimants")
+                    if row.get("respondents"):
+                        case_info = case_info + ". Ответчик: " + row.get("respondents")
+                    if row.get("third_parties"):
+                        case_info = case_info + ". Третьия лица: " + row.get("third_parties")
+
+            result.append({"case_num": row.get("id"),
+                           "case_link": court.get("link") + row.get("url"),
+                           "court": court.get("title") + " Участок " + row.get("court_number"),
+                           "check_date": check_date,
+                           "status": row.get("status"),
+                           "order_num": order_num,
+                           "case_info": case_info,
+                           "section_name": section_name
+                           })
+
+        if len(content_json['result']['data']) == 0:
+            break
+        else:
+            page_num += 1
+
+    logger.debug(f"Date {check_date} case type {case_type} finished")
+    return result
+
+
+def parser_type_4(court: dict[str, str]) -> None:
+    """Парсер тип 4"""
+    result = []
+    futures = []  # list to store future results of threads
+    case_types = ["adm", "civil", "criminal", "public"]
+    clean_stage_table()
+    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_4) as executor:
+        for date in daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
+                              datetime.now() + timedelta(days=config.RANGE_FORWARD)):
+            check_date = date.strftime("%d.%m.%Y")
+            for case_type in case_types:
+                future = executor.submit(parse_page_4, court, check_date, case_type)
+                futures.append(future)
+
+        for task in as_completed(futures):
+            result_part = task.result()
+            result.extend(result_part)
+
+    if len(result) > 0:
+        load_to_stage(result, config.STAGE_MAPPING_4)
+        load_to_dm()
+        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
+        cursor.execute(sql)
+        conn.commit()
+
+
+def scrap_courts(courts_config: list[dict[str, str]]):
     for idx, court in enumerate(courts_config):
-        if court_filter and court.get("alias") != court_filter:
-            continue
         logger.info("Processing " + court.get("alias") + " with parser " + court.get("parser_type") + ", " + str(
             idx + 1) + "/" + str(len(courts_config)))
         if court.get("parser_type") == "1":
-            parser_type_1(court, date_from, date_to)
+            parser_type_1(court)
         elif court.get("parser_type") == "2":
-            parser_type_2(court, date_from, date_to)
+            parser_type_2(court)
         elif court.get("parser_type") == "3":
-            parser_type_3(court, date_from, date_to)
-
-
-def parse_args() -> argparse.Namespace:
-    """Parser for command-line options, arguments and sub-commands."""
-
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--court", type=str, required=False)
-    parser.add_argument("--date_from", type=str, required=False,
-                        default=(datetime.now() - timedelta(days=config.RANGE_BACKWARD)).strftime("%Y-%m-%d"))
-    parser.add_argument("--date_to", type=str, required=False,
-                        default=(datetime.now() + timedelta(days=config.RANGE_FORWARD)).strftime("%Y-%m-%d"))
-    parsed_args = parser.parse_args()
-
-    return parsed_args
+            parser_type_3(court)
+        elif court.get("parser_type") == "4":
+            parser_type_4(court)
 
 
 def main() -> None:
-    args = parse_args()
     courts_config = read_courts_config()
-    scrap_courts(args.date_from, args.date_to, args.court, courts_config)
+    scrap_courts(courts_config)
 
 
 if __name__ == "__main__":
