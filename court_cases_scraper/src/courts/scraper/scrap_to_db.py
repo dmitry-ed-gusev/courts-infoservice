@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from loguru import logger
 from court_cases_scraper.src.courts.db import db_tools
-from court_cases_scraper.src.courts.scraper import parser_1, parser_2, parser_3, parser_4
+from court_cases_scraper.src.courts.scraper import parser_1, parser_2, parser_3, parser_4, parser_5, parser_6
 
 
 def scrap_courts(courts_config: list[dict[str, str]],  db_config: dict[str, str]):
@@ -21,7 +21,10 @@ def scrap_courts(courts_config: list[dict[str, str]],  db_config: dict[str, str]
             parser_3.parser_type_3(court, db_config)
         elif court.get("parser_type") == "4":
             parser_4.parser_type_4(court, db_config)
-
+        elif court.get("parser_type") == "5":
+            parser_5.parser_type_5(court, db_config)
+        elif court.get("parser_type") == "6":
+            parser_6.parser_type_6(court, db_config)
 
 def main() -> None:
     # Load environment variables from .env file from the project root dir

@@ -198,7 +198,7 @@ insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://kingisepp--lo.sudrf.ru', 'Кингисеппский городской суд (Ленинградская область)', 'lenob-king', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://kirishsky--lo.sudrf.ru', 'Киришский городской суд (Ленинградская область)', 'lenob-kirish', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://kirovsky--lo.sudrf.ru', 'Кировский городской суд (Ленинградская область)', 'lenob-kirov', False, '1', '1');
-insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://oblsud--lo.sudrf.ru', 'Ленинградский областной суд (Ленинградская область)', 'lenob-obl', True, '1', '');
+insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://oblsud--lo.sudrf.ru', 'Ленинградский областной суд (Ленинградская область)', 'lenob-obl', False, '1', '6');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://lodeynopolsky--lo.sudrf.ru', 'Лодейнопольский городской суд (Ленинградская область)', 'lenob-lod', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://lomonosovsky--lo.sudrf.ru', 'Ломоносовский районный суд (Ленинградская область)', 'lenob-lom', False, '1', '1');
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://lugasud--lo.sudrf.ru', 'Лужский городской суд (Ленинградская область)', 'lenob-luzh', False, '1', '1');
@@ -213,4 +213,4 @@ insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_
 
 -- mirovye
 insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://mirsud.spb.ru', 'Мировой суд (Город Санкт-Петербург)', 'spb-mir', False, null, '4');
-insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://mos-sud.ru', 'Мировой суд (Город Москва)', 'msk-mir', True, null, '5');
+insert into dm.court_scrap_config (link, title, alias, skip, server_num, parser_type) values ('https://mos-sud.ru', 'Мировой суд (Город Москва)', 'msk-mir', False, null, '5');

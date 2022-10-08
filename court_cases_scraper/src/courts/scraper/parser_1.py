@@ -1,5 +1,6 @@
+"""scrap regular court pages from sudrf"""
 from datetime import datetime, timedelta
-
+import time
 import threading
 import requests
 import pymysql
@@ -20,8 +21,16 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
     logger.debug(f"Date {check_date}")
+    retries = 0
     page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
         "server_num") + "&H_date=" + check_date)
+    while page.status_code != 200:
+        time.sleep(2)
+        page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
+            "server_num") + "&H_date=" + check_date)
+        retries += 1
+        if retries > config.MAX_RETRIES:
+            break
     result = []
     soup = BeautifulSoup(page.content, 'html.parser')
     tables = soup.find_all("div", id="tablcont")

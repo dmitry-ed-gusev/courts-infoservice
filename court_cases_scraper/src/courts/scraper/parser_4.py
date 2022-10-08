@@ -1,5 +1,5 @@
+"""scrap spb miroviye sudy"""
 import time
-import os
 import threading
 from datetime import datetime, timedelta
 
@@ -47,7 +47,7 @@ def parse_page_4(court: dict, check_date: str, case_type: str) -> list[dict[str,
                 finished = content_json["finished"]
             if not finished:
                 time.sleep(2)
-            if total_tries > 20:
+            if total_tries > config.MAX_RETRIES:
                 break
 
         for row in content_json["result"]["data"]:
