@@ -62,13 +62,14 @@ def parse_page_6(court: dict, check_date: str) -> list[dict[str, str]]:
 
                 result_row["check_date"] = check_date
                 result_row["court"] = court.get("title")
+                result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
     return result
 
 
 def parser_type_6(court: dict[str, str], db_config: dict[str, str]) -> None:
     """Парсер тип 3"""
-    result = []
+    result_len = 0
     futures = []  # list to store future results of threads
     db_tools.clean_stage_table(db_config)
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6) as executor:
@@ -78,23 +79,24 @@ def parser_type_6(court: dict[str, str], db_config: dict[str, str]) -> None:
             future = executor.submit(parse_page_6, court, check_date)
             futures.append(future)
 
-        for task in as_completed(futures):
-            result_part = task.result()
-            result.extend(result_part)
+            for task in as_completed(futures):
+                result_part = task.result()
+                result_len += len(result_part)
+                db_tools.load_to_stage(result_part, config.STAGE_MAPPING_1, db_config)
 
-    if len(result) > 0:
-        logger.debug("Connecting to db")
+    if result_len > 0:
+        db_tools.load_to_dm(db_config)
+        logger.info("Court " + court.get("alias") + " loaded. Total records " + str(result_len))
 
         conn = pymysql.connect(host=db_config.get("host"),
                                port=int(db_config.get("port")),
                                user=db_config.get("user"),
-                               passwd=db_config.get("passwd")
+                               passwd=db_config.get("passwd"),
+                               database=db_config.get("db"),
                                )
 
         logger.debug("Connected")
         cursor = conn.cursor()
-        db_tools.load_to_stage(result, config.STAGE_MAPPING_6, db_config)
-        db_tools.load_to_dm(db_config)
-        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
+        sql = "insert into dm_court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
         cursor.execute(sql)
         conn.commit()

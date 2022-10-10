@@ -7,54 +7,53 @@ from court_cases_scraper.src.courts.config import scraper_config as config
 
 def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
     """calcs row hash in stage"""
-    logger.debug("Connecting to db")
 
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = "call stage.p_update_court_cases_row_hash()"
+    sql = "call stg_p_update_court_cases_row_hash()"
     cursor.execute(sql)
     conn.commit()
 
 
 def load_to_dm(db_config: dict[str, str]) -> None:
     """calls load to dm procedure"""
-    logger.debug("Connecting to db")
-
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
-    logger.debug("Connected")
+    logger.debug("Connected. Starting merge to DM")
     cursor = conn.cursor()
-    sql = "call dm.p_load_court_cases()"
+    sql = "call dm_p_load_court_cases()"
     cursor.execute(sql)
     conn.commit()
+    logger.debug("Merge to DM completed.")
 
 
 def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     """reads court config from db"""
-    logger.debug("Connecting to db")
-
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
-    logger.debug("Connected")
+    logger.debug("Connected. Reading courts config from DB.")
     cursor = conn.cursor()
     result = []
     cursor.execute("""
             select link, title, alias, server_num, parser_type
-            from dm.v_courts_to_refresh
+            from dm_v_courts_to_refresh
             """)
     result_1 = cursor.fetchall()
     if result_1:
@@ -66,18 +65,17 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
                  "server_num": row1[3],
                  "parser_type": row1[4]}
             )
-
+    logger.debug("Config read completed.")
     return result
 
 
 def clean_stage_table(db_config: dict[str, str]) -> None:
     """clean stage table"""
-    logger.debug("Connecting to db")
-
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
     logger.debug("Connected")
@@ -91,12 +89,14 @@ def clean_stage_table(db_config: dict[str, str]) -> None:
 
 def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]], db_config: dict[str, str]) -> None:
     """loads parsed data to stage"""
-    logger.debug("Connecting to db")
+    if len(data) == 0:
+        return
 
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
     logger.debug("Connected")
@@ -128,6 +128,6 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
             conn.commit()
             logger.debug("Commit " + str(idx_r))
     conn.commit()
-    cursor.execute("call stage.p_update_court_cases_row_hash()")
+    cursor.execute("call stg_p_update_court_cases_row_hash()")
     conn.commit()
-    logger.debug("Stage data load completed")
+    logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")

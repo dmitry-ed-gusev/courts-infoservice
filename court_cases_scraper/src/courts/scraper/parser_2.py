@@ -28,20 +28,20 @@ def parse_page_2(court: dict, check_date: str) -> list[dict[str, str]]:
     order_num = 0
     while True:
         retries = 0
-        page = session.get(
-            court.get("link") +
-            "&hearingRangeDateFrom=" + check_date +
-            "&hearingRangeDateTo=" + check_date +
-            "&page=" + str(page_num)
-        )
-        while page.status_code != 200:
-            time.sleep(2)
-            page = session.get(
-                court.get("link") +
-                "&hearingRangeDateFrom=" + check_date +
-                "&hearingRangeDateTo=" + check_date +
-                "&page=" + str(page_num)
-            )
+        status_code = 0
+        while status_code != 200:
+            if retries > 0:
+                time.sleep(2)
+            try:
+                page = session.get(
+                    court.get("link") +
+                    "&hearingRangeDateFrom=" + check_date +
+                    "&hearingRangeDateTo=" + check_date +
+                    "&page=" + str(page_num)
+                )
+                status_code = page.status_code
+            except:
+                None
             retries += 1
             if retries > config.MAX_RETRIES:
                 break
@@ -73,6 +73,7 @@ def parse_page_2(court: dict, check_date: str) -> list[dict[str, str]]:
 
                     result_row["check_date"] = check_date
                     result_row["court"] = court.get("title")
+                    result_row["court_alias"] = court.get("alias")
                     result_row["order_num"] = order_num
                     result.append(result_row)
         if page_num == 1:
@@ -91,7 +92,7 @@ def parse_page_2(court: dict, check_date: str) -> list[dict[str, str]]:
 
 def parser_type_2(court: dict[str, str], db_config: dict[str, str]) -> None:
     """parser for mos gor sud"""
-    result = []
+    result_len = 0
     futures = []  # list to store future results of threads
     db_tools.clean_stage_table(db_config)
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_2) as executor:
@@ -103,20 +104,20 @@ def parser_type_2(court: dict[str, str], db_config: dict[str, str]) -> None:
 
         for task in as_completed(futures):
             result_part = task.result()
-            result.extend(result_part)
-    if len(result) > 0:
-        logger.debug("Connecting to db")
+            result_len += len(result_part)
+            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_2, db_config)
 
+    if result_len > 0:
+        db_tools.load_to_dm(db_config)
+        logger.info("Court " + court.get("alias") + " loaded. Total records " + str(result_len))
         conn = pymysql.connect(host=db_config.get("host"),
                                port=int(db_config.get("port")),
                                user=db_config.get("user"),
-                               passwd=db_config.get("passwd")
+                               passwd=db_config.get("passwd"),
+                               database=db_config.get("db"),
                                )
-
         logger.debug("Connected")
         cursor = conn.cursor()
-        db_tools.load_to_stage(result, config.STAGE_MAPPING_2, db_config)
-        db_tools.load_to_dm(db_config)
-        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
+        sql = "insert into dm_court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
         cursor.execute(sql)
         conn.commit()
