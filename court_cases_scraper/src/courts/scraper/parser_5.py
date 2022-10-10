@@ -97,24 +97,11 @@ def parser_type_5(court: dict[str, str], db_config: dict[str, str]) -> None:
             future = executor.submit(parse_page_5, court, check_date)
             futures.append(future)
 
-            for task in as_completed(futures):
-                result_part = task.result()
-                result_len += len(result_part)
-                db_tools.load_to_stage(result_part, config.STAGE_MAPPING_1, db_config)
+        for task in as_completed(futures):
+            result_part = task.result()
+            result_len += len(result_part)
+            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_5, db_config)
 
     if result_len > 0:
         db_tools.load_to_dm(db_config)
-        logger.info("Court " + court.get("alias") + " loaded. Total records " + str(result_len))
-
-        conn = pymysql.connect(host=db_config.get("host"),
-                               port=int(db_config.get("port")),
-                               user=db_config.get("user"),
-                               passwd=db_config.get("passwd"),
-                               database=db_config.get("db"),
-                               )
-
-        logger.debug("Connected")
-        cursor = conn.cursor()
-        sql = "insert into dm_court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
-        cursor.execute(sql)
-        conn.commit()
+        db_tools.log_scrapped_court(db_config, court.get("alias"))

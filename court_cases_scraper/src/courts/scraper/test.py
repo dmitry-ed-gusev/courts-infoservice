@@ -15,11 +15,12 @@ load_dotenv()
 db_config = {"host": os.environ["MYSQL_HOST"],
              "port": os.environ["MYSQL_PORT"],
              "user": os.environ["MYSQL_USER"],
-             "passwd": os.environ["MYSQL_PASS"]}
+             "passwd": os.environ["MYSQL_PASS"],
+             "db": os.environ["MYSQL_DB"]}
 
-court = {"title": "mossud", "link": "https://mos-sud.ru", "server_num": "1"}
+court = {"title": "https://mirsud.spb.ru", "link": "https://mirsud.spb.ru", "server_num": "1"}
 check_date = "10.10.2022"
-result = parser_5.parse_page_5(court, check_date)
+result = parser_4.parse_page_4(court, check_date)
 
 print(result)
 print(len(result))

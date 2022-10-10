@@ -85,15 +85,4 @@ def parser_type_1(court: dict[str, str], db_config: dict[str, str]) -> None:
     if result_len > 0:
         db_tools.load_to_dm(db_config)
         logger.info("Court " + court.get("alias") + " loaded. Total records " + str(result_len))
-        conn = pymysql.connect(host=db_config.get("host"),
-                               port=int(db_config.get("port")),
-                               user=db_config.get("user"),
-                               passwd=db_config.get("passwd"),
-                               database=db_config.get("db"),
-                               )
-
-        logger.debug("Connected")
-        cursor = conn.cursor()
-        sql = "insert into dm_court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
-        cursor.execute(sql)
-        conn.commit()
+        db_tools.log_scrapped_court(db_config, court.get("alias"))

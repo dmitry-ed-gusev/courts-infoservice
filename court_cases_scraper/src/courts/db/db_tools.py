@@ -5,6 +5,21 @@ from loguru import logger
 from court_cases_scraper.src.courts.config import scraper_config as config
 
 
+def log_scrapped_court(db_config: dict[str, str], alias: str) -> None:
+    """adds court scrap to log"""
+    conn = pymysql.connect(host=db_config.get("host"),
+                           port=int(db_config.get("port")),
+                           user=db_config.get("user"),
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
+                           )
+
+    logger.debug("Connected")
+    cursor = conn.cursor()
+    sql = "insert into dm_court_cases_scrap_log (court, load_dttm) values ('" + alias + "', now())"
+    cursor.execute(sql)
+    conn.commit()
+
 def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
     """calcs row hash in stage"""
 
@@ -113,7 +128,7 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
 
     sql_statement = sql_part1.rstrip(", ") + ") VALUES (" + sql_part2.rstrip(", ") + ")"
 
-    logger.debug(sql_statement)
+    # logger.debug(sql_statement)
 
     logger.debug("Stage data load start")
     for idx_r, row in enumerate(data):
