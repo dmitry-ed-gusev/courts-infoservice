@@ -1,11 +1,10 @@
-import os
+"""scrap js page of krasnodarskiy kraevoy sud"""
+
 import threading
 from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
-import pymysql
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -28,7 +27,6 @@ def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
     options.add_argument("--no-sandbox")
     options.add_argument("--enable-javascript")
     options.add_argument("--user-agent " + config.USER_AGENT)
-
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     logger.debug(f"Date {check_date}")
     driver.get(
@@ -62,13 +60,15 @@ def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
 
                 result_row["check_date"] = check_date
                 result_row["court"] = court.get("title")
+                result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
+    driver.close()
     return result
 
 
 def parser_type_3(court: dict[str, str], db_config: dict[str, str]) -> None:
     """Парсер тип 3"""
-    result = []
+    result_len = 0
     futures = []  # list to store future results of threads
     db_tools.clean_stage_table(db_config)
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3) as executor:
@@ -80,21 +80,9 @@ def parser_type_3(court: dict[str, str], db_config: dict[str, str]) -> None:
 
         for task in as_completed(futures):
             result_part = task.result()
-            result.extend(result_part)
+            result_len += len(result_part)
+            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_3, db_config)
 
-    if len(result) > 0:
-        logger.debug("Connecting to db")
-
-        conn = pymysql.connect(host=db_config.get("host"),
-                               port=int(db_config.get("port")),
-                               user=db_config.get("user"),
-                               passwd=db_config.get("passwd")
-                               )
-
-        logger.debug("Connected")
-        cursor = conn.cursor()
-        db_tools.load_to_stage(result, config.STAGE_MAPPING_3, db_config)
+    if result_len > 0:
         db_tools.load_to_dm(db_config)
-        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
-        cursor.execute(sql)
-        conn.commit()
+        db_tools.log_scrapped_court(db_config, court.get("alias"))

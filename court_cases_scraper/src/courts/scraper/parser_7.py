@@ -1,4 +1,4 @@
-"""scrap regular court pages from sudrf"""
+"""scrap stav mir sud"""
 from datetime import datetime, timedelta
 import time
 import threading
@@ -15,7 +15,7 @@ from court_cases_scraper.src.courts.config import scraper_config as config
 thread_local = threading.local()  # thread local storage
 
 
-def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
+def parse_page_7(court: dict, check_date: str) -> list[dict[str, str]]:
     """parses output page"""
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
@@ -64,22 +64,23 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
     return result
 
 
-def parser_type_1(court: dict[str, str], db_config: dict[str, str]) -> None:
-    """Парсер тип 1"""
+def parser_type_7(court: dict[str, str], db_config: dict[str, str]) -> None:
+    """Парсер тип 7"""
     result_len = 0
     futures = []  # list to store future results of threads
     db_tools.clean_stage_table(db_config)
-    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor:
+    case_types = ["caselistcs", "caselistus", "caselistas"]
+    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_7) as executor:
         for date in misc.daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
                                    datetime.now() + timedelta(days=config.RANGE_FORWARD)):
             check_date = date.strftime("%d.%m.%Y")
-            future = executor.submit(parse_page_1, court, check_date)
+            future = executor.submit(parse_page_7, court, check_date)
             futures.append(future)
 
         for task in as_completed(futures):
             result_part = task.result()
             result_len += len(result_part)
-            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_1, db_config)
+            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_7, db_config)
 
     if result_len > 0:
         db_tools.load_to_dm(db_config)

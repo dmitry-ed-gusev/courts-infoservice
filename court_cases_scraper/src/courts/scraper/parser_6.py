@@ -1,8 +1,10 @@
-"""scrap regular court pages from sudrf"""
-from datetime import datetime, timedelta
-import time
+"""scrap js page of len obl sud"""
+
 import threading
-import requests
+from datetime import datetime, timedelta
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -15,25 +17,24 @@ from court_cases_scraper.src.courts.config import scraper_config as config
 thread_local = threading.local()  # thread local storage
 
 
-def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
-    """parses output page"""
-    session = requests.Session()
-    session.headers = {"user-agent": config.USER_AGENT}
-    logger.debug(f"Date {check_date}")
-    retries = 0
-    page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
-        "server_num") + "&H_date=" + check_date)
-    while page.status_code != 200:
-        time.sleep(2)
-        page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
-            "server_num") + "&H_date=" + check_date)
-        retries += 1
-        if retries > config.MAX_RETRIES:
-            break
+def parse_page_6(court: dict, check_date: str) -> list[dict[str, str]]:
+    """parses output js page"""
     result = []
-    soup = BeautifulSoup(page.content, 'html.parser')
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--window-size=1920,1024")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--enable-javascript")
+    options.add_argument("--user-agent " + config.USER_AGENT)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    logger.debug(f"Date {check_date}")
+    driver.get(
+        court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date)
+    html = driver.page_source
+    soup = BeautifulSoup(html, 'html.parser')
     tables = soup.find_all("div", id="tablcont")
-    # <div id="tablcont">
+    # <div id="resultTable">
     for table in tables:
         section_name = ""
         sections = table.find_all("tr")
@@ -42,16 +43,16 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
             if idx == 0:
                 continue
             # setting new section
-            if len(section.contents) == 1:
+            if len(section.find_all("td")) == 1:
                 for idx_r, row in enumerate(section.find_all("td")):
-                    section_name = row.text
+                    section_name = row.text.title()
             # appending row
             else:
                 result_row = {"section_name": section_name}
                 # td
                 for idx_r, row in enumerate(section.find_all("td")):
                     if row.text:
-                        result_row["col" + str(idx_r)] = row.text.strip()
+                        result_row["col" + str(idx_r)] = row.text.replace("БЕЗ ИМЕНИ!", "").strip()
                     else:
                         result_row["col" + str(idx_r)] = str(row.contents).strip()
                     if row.find(href=True):
@@ -61,27 +62,27 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
                 result_row["court"] = court.get("title")
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
+    driver.close()
     return result
 
 
-def parser_type_1(court: dict[str, str], db_config: dict[str, str]) -> None:
-    """Парсер тип 1"""
+def parser_type_6(court: dict[str, str], db_config: dict[str, str]) -> None:
+    """Парсер тип 6"""
     result_len = 0
     futures = []  # list to store future results of threads
     db_tools.clean_stage_table(db_config)
-    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor:
+    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6) as executor:
         for date in misc.daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
                                    datetime.now() + timedelta(days=config.RANGE_FORWARD)):
             check_date = date.strftime("%d.%m.%Y")
-            future = executor.submit(parse_page_1, court, check_date)
+            future = executor.submit(parse_page_6, court, check_date)
             futures.append(future)
 
         for task in as_completed(futures):
             result_part = task.result()
             result_len += len(result_part)
-            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_1, db_config)
+            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_6, db_config)
 
     if result_len > 0:
         db_tools.load_to_dm(db_config)
-        logger.info("Court " + court.get("alias") + " loaded. Total records " + str(result_len))
         db_tools.log_scrapped_court(db_config, court.get("alias"))

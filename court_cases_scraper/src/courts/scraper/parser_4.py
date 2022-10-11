@@ -1,9 +1,7 @@
+"""scrap spb miroviye sudy"""
 import time
-import os
 import threading
 from datetime import datetime, timedelta
-
-import pymysql
 import requests
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -47,7 +45,7 @@ def parse_page_4(court: dict, check_date: str, case_type: str) -> list[dict[str,
                 finished = content_json["finished"]
             if not finished:
                 time.sleep(2)
-            if total_tries > 20:
+            if total_tries > config.MAX_RETRIES:
                 break
 
         for row in content_json["result"]["data"]:
@@ -82,6 +80,7 @@ def parse_page_4(court: dict, check_date: str, case_type: str) -> list[dict[str,
             result.append({"case_num": row.get("id"),
                            "case_link": court.get("link") + row.get("url"),
                            "court": court.get("title") + " Участок " + row.get("court_number"),
+                           "court_alias": court.get("alias"),
                            "check_date": check_date,
                            "status": row.get("status"),
                            "order_num": order_num,
@@ -89,7 +88,7 @@ def parse_page_4(court: dict, check_date: str, case_type: str) -> list[dict[str,
                            "section_name": section_name
                            })
 
-        if len(content_json['result']['data']) == 0:
+        if len(content_json["result"]["data"]) == 0:
             break
         else:
             page_num += 1
@@ -100,13 +99,13 @@ def parse_page_4(court: dict, check_date: str, case_type: str) -> list[dict[str,
 
 def parser_type_4(court: dict[str, str], db_config: dict[str, str]) -> None:
     """Парсер тип 4"""
-    result = []
+    result_len = 0
     futures = []  # list to store future results of threads
     case_types = ["adm", "civil", "criminal", "public"]
     db_tools.clean_stage_table(db_config)
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_4) as executor:
         for date in misc.daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
-                              datetime.now() + timedelta(days=config.RANGE_FORWARD)):
+                                   datetime.now() + timedelta(days=config.RANGE_FORWARD)):
             check_date = date.strftime("%d.%m.%Y")
             for case_type in case_types:
                 future = executor.submit(parse_page_4, court, check_date, case_type)
@@ -114,21 +113,9 @@ def parser_type_4(court: dict[str, str], db_config: dict[str, str]) -> None:
 
         for task in as_completed(futures):
             result_part = task.result()
-            result.extend(result_part)
+            result_len += len(result_part)
+            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_4, db_config)
 
-    if len(result) > 0:
-        logger.debug("Connecting to db")
-
-        conn = pymysql.connect(host=db_config.get("host"),
-                               port=int(db_config.get("port")),
-                               user=db_config.get("user"),
-                               passwd=db_config.get("passwd")
-                               )
-
-        logger.debug("Connected")
-        cursor = conn.cursor()
-        db_tools.load_to_stage(result, config.STAGE_MAPPING_4, db_config)
+    if result_len > 0:
         db_tools.load_to_dm(db_config)
-        sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + court.get("alias") + "', now())"
-        cursor.execute(sql)
-        conn.commit()
+        db_tools.log_scrapped_court(db_config, court.get("alias"))

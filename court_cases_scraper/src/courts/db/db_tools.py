@@ -1,60 +1,77 @@
 import os
+from pathlib import Path
 import pymysql
 from loguru import logger
 
 from court_cases_scraper.src.courts.config import scraper_config as config
+from court_cases_scraper.src.courts.config import db_init_config
 
 
-def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
-    logger.debug("Connecting to db")
-
+def log_scrapped_court(db_config: dict[str, str], alias: str) -> None:
+    """adds court scrap to log"""
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = "call stage.p_update_court_cases_row_hash()"
+    sql = "insert into config_court_cases_scrap_log (court, load_dttm) values ('" + alias + "', now())"
     cursor.execute(sql)
+    conn.commit()
+
+
+def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
+    """calcs row hash in stage"""
+
+    conn = pymysql.connect(host=db_config.get("host"),
+                           port=int(db_config.get("port")),
+                           user=db_config.get("user"),
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
+                           )
+
+    logger.debug("Connected")
+    cursor = conn.cursor()
+    sproc = "stage_p_update_court_cases_row_hash"
+    cursor.execute(sproc)
     conn.commit()
 
 
 def load_to_dm(db_config: dict[str, str]) -> None:
     """calls load to dm procedure"""
-    logger.debug("Connecting to db")
-
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
-    logger.debug("Connected")
+    logger.debug("Connected. Starting merge to DM")
     cursor = conn.cursor()
-    sql = "call dm.p_load_court_cases()"
-    cursor.execute(sql)
+    sproc = "dm_p_load_court_cases"
+    cursor.callproc(sproc)
     conn.commit()
+    logger.debug("Merge to DM completed.")
 
 
 def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     """reads court config from db"""
-    logger.debug("Connecting to db")
-
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
-    logger.debug("Connected")
+    logger.debug("Connected. Reading courts config from DB.")
     cursor = conn.cursor()
     result = []
     cursor.execute("""
             select link, title, alias, server_num, parser_type
-            from dm.v_courts_to_refresh
+            from config_v_courts_to_refresh
             """)
     result_1 = cursor.fetchall()
     if result_1:
@@ -66,18 +83,17 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
                  "server_num": row1[3],
                  "parser_type": row1[4]}
             )
-
+    logger.debug("Config read completed.")
     return result
 
 
 def clean_stage_table(db_config: dict[str, str]) -> None:
     """clean stage table"""
-    logger.debug("Connecting to db")
-
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
     logger.debug("Connected")
@@ -91,12 +107,14 @@ def clean_stage_table(db_config: dict[str, str]) -> None:
 
 def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]], db_config: dict[str, str]) -> None:
     """loads parsed data to stage"""
-    logger.debug("Connecting to db")
+    if len(data) == 0:
+        return
 
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
                            user=db_config.get("user"),
-                           passwd=db_config.get("passwd")
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
                            )
 
     logger.debug("Connected")
@@ -113,7 +131,7 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
 
     sql_statement = sql_part1.rstrip(", ") + ") VALUES (" + sql_part2.rstrip(", ") + ")"
 
-    logger.debug(sql_statement)
+    # logger.debug(sql_statement)
 
     logger.debug("Stage data load start")
     for idx_r, row in enumerate(data):
@@ -128,6 +146,35 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
             conn.commit()
             logger.debug("Commit " + str(idx_r))
     conn.commit()
-    cursor.execute("call stage.p_update_court_cases_row_hash()")
+    cursor.callproc("stage_p_update_court_cases_row_hash")
     conn.commit()
-    logger.debug("Stage data load completed")
+    logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")
+
+
+def init_db(db_config: dict[str, str], force: bool = False) -> None:
+    """executes sql scripts to init db structure"""
+    conn = pymysql.connect(host=db_config.get("host"),
+                           port=int(db_config.get("port")),
+                           user=db_config.get("user"),
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
+                           )
+
+    logger.debug("Connected")
+    cursor = conn.cursor()
+    os.chdir(Path(db_init_config.SQL_SCRIPTS_DIR))
+    is_empty = False
+    if not force:
+        try:
+            cursor.execute(db_init_config.TEST_DB_QUERY)
+        except pymysql.Error:
+            is_empty = True
+    if force or is_empty:
+        for file in db_init_config.INIT_FILES:
+            with open(file, 'r', encoding="utf-8") as sql_file:
+                sql = " ".join(sql_file.readlines())
+                logger.debug(sql)
+                cursor.execute(sql)
+
+        conn.commit()
+    cursor.close()
