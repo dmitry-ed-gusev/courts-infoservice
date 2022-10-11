@@ -2,8 +2,6 @@
 import time
 import threading
 from datetime import datetime, timedelta
-
-import pymysql
 import requests
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed

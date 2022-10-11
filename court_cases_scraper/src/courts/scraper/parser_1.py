@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import time
 import threading
 import requests
-import pymysql
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed

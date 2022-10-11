@@ -1,8 +1,8 @@
 """scrapper config"""
 
 MAX_RETRIES = 20
-RANGE_BACKWARD = 30
-RANGE_FORWARD = 60
+RANGE_BACKWARD = 7
+RANGE_FORWARD = 30
 WORKERS_COUNT_1 = 30
 WORKERS_COUNT_2 = 10
 WORKERS_COUNT_3 = 10
@@ -14,7 +14,7 @@ COMMIT_INTERVAL = 1000
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36"
 
-STAGE_TABLE = "stg_court_cases"
+STAGE_TABLE = "stage.stg_court_cases"
 STAGE_MAPPING_1 = [{"name": "court", "mapping": "court"},
                    {"name": "court_alias", "mapping": "court_alias"},
                    {"name": "check_date", "mapping": "check_date"},

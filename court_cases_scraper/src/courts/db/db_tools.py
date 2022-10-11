@@ -16,9 +16,10 @@ def log_scrapped_court(db_config: dict[str, str], alias: str) -> None:
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = "insert into dm_court_cases_scrap_log (court, load_dttm) values ('" + alias + "', now())"
+    sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + alias + "', now())"
     cursor.execute(sql)
     conn.commit()
+
 
 def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
     """calcs row hash in stage"""
@@ -32,7 +33,7 @@ def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = "call stg_p_update_court_cases_row_hash()"
+    sql = "call stage.p_update_court_cases_row_hash()"
     cursor.execute(sql)
     conn.commit()
 
@@ -48,7 +49,7 @@ def load_to_dm(db_config: dict[str, str]) -> None:
 
     logger.debug("Connected. Starting merge to DM")
     cursor = conn.cursor()
-    sql = "call dm_p_load_court_cases()"
+    sql = "call dm.p_load_court_cases()"
     cursor.execute(sql)
     conn.commit()
     logger.debug("Merge to DM completed.")
@@ -68,7 +69,7 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     result = []
     cursor.execute("""
             select link, title, alias, server_num, parser_type
-            from dm_v_courts_to_refresh
+            from dm.v_courts_to_refresh
             """)
     result_1 = cursor.fetchall()
     if result_1:
@@ -143,6 +144,6 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
             conn.commit()
             logger.debug("Commit " + str(idx_r))
     conn.commit()
-    cursor.execute("call stg_p_update_court_cases_row_hash()")
+    cursor.execute("call stage.p_update_court_cases_row_hash()")
     conn.commit()
     logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")

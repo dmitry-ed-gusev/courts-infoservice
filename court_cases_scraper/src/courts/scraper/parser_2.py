@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 import threading
 import requests
 import re
-import pymysql
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -40,7 +39,7 @@ def parse_page_2(court: dict, check_date: str) -> list[dict[str, str]]:
                     "&page=" + str(page_num)
                 )
                 status_code = page.status_code
-            except:
+            except Exception:
                 None
             retries += 1
             if retries > config.MAX_RETRIES:

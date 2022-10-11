@@ -41,11 +41,12 @@ def main() -> None:
 
     # Load environment variables from .env file from the project root dir
     load_dotenv()
-    db_config = {"host": os.environ["MYSQL_HOST"],
-                 "port": os.environ["MYSQL_PORT"],
-                 "user": os.environ["MYSQL_USER"],
-                 "passwd": os.environ["MYSQL_PASS"],
-                 "db": os.environ["MYSQL_DB"]}
+    db_config = {"host": os.environ['MYSQL_HOST'],
+                 "port": os.environ['MYSQL_PORT'],
+                 "user": os.environ['MYSQL_USER'],
+                 "passwd": os.environ['MYSQL_PASS'],
+                 "db": os.environ['MYSQL_DB']
+                 }
     courts_config = db_tools.read_courts_config(db_config)
     scrap_courts(courts_config, db_config)
 

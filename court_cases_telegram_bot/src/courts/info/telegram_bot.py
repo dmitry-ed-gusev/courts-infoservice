@@ -16,7 +16,7 @@ import logging
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
-from courts.info.config import bot_config
+from court_cases_telegram_bot.src.courts.info.config import bot_config
 
 # Enable logging
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)

@@ -7,7 +7,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import re
-import pymysql
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,12 +22,12 @@ thread_local = threading.local()  # thread local storage
 def parse_page_5(court: dict, check_date: str) -> list[dict[str, str]]:
     """parses mos sud page with paging"""
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_argument("--window-size=1920,1024")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--enable-javascript")
-
+    options.add_argument("--user-agent " + config.USER_AGENT)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     result = []
@@ -81,7 +80,7 @@ def parse_page_5(court: dict, check_date: str) -> list[dict[str, str]]:
             page_num += 1
         else:
             break
-
+    driver.close()
     return result
 
 

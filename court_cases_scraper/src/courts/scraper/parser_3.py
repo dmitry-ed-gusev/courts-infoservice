@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
-import pymysql
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,7 +21,7 @@ def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
     """parses output js page"""
     result = []
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_argument("--window-size=1920,1024")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -64,6 +62,7 @@ def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
                 result_row["court"] = court.get("title")
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
+    driver.close()
     return result
 
 

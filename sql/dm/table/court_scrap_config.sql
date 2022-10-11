@@ -1,6 +1,6 @@
-drop table if exists dm_court_scrap_config;
+drop table if exists dm.court_scrap_config;
 
-create table dm_court_scrap_config (
+create table dm.court_scrap_config (
 link varchar(1000),
 title varchar(1000),
 skip boolean,

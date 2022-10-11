@@ -18,9 +18,9 @@ db_config = {"host": os.environ["MYSQL_HOST"],
              "passwd": os.environ["MYSQL_PASS"],
              "db": os.environ["MYSQL_DB"]}
 
-court = {"title": "https://mirsud.spb.ru", "link": "https://mirsud.spb.ru", "server_num": "1"}
+court = {"title": "KRD_KKS", "link": "https://kraevoi--krd.sudrf.ru", "server_num": "1", "alias": "krd-kks"}
 check_date = "10.10.2022"
-result = parser_4.parse_page_4(court, check_date)
+result = parser_3.parse_page_3(court, check_date)
 
 print(result)
 print(len(result))
