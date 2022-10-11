@@ -1,6 +1,6 @@
-drop table if exists dm.court_cases;
+drop table if exists dm_court_cases;
 
-create table dm.court_cases (
+create table dm_court_cases (
 court varchar(200),
 court_alias varchar(50),
 check_date date,
@@ -19,4 +19,4 @@ row_hash varchar(100),
 load_dttm datetime
 );
 
-alter table dm.court_cases add index idx_case_num (case_num);
+alter table dm_court_cases add index idx_case_num (case_num);

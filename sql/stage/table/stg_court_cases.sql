@@ -1,6 +1,6 @@
-drop table if exists stage.stg_court_cases;
+drop table if exists stage_stg_court_cases;
 
-create table stage.stg_court_cases (
+create table stage_stg_court_cases (
 court varchar(200),
 court_alias varchar(50),
 check_date varchar(50),

@@ -21,7 +21,7 @@ def parse_page_3(court: dict, check_date: str) -> list[dict[str, str]]:
     """parses output js page"""
     result = []
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
     options.add_argument("--window-size=1920,1024")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")

@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 import pymysql
 from loguru import logger
 
 from court_cases_scraper.src.courts.config import scraper_config as config
+from court_cases_scraper.src.courts.config import db_init_config
 
 
 def log_scrapped_court(db_config: dict[str, str], alias: str) -> None:
@@ -16,7 +18,7 @@ def log_scrapped_court(db_config: dict[str, str], alias: str) -> None:
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = "insert into dm.court_cases_scrap_log (court, load_dttm) values ('" + alias + "', now())"
+    sql = "insert into config_court_cases_scrap_log (court, load_dttm) values ('" + alias + "', now())"
     cursor.execute(sql)
     conn.commit()
 
@@ -33,8 +35,8 @@ def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = "call stage.p_update_court_cases_row_hash()"
-    cursor.execute(sql)
+    sproc = "stage_p_update_court_cases_row_hash"
+    cursor.execute(sproc)
     conn.commit()
 
 
@@ -49,8 +51,8 @@ def load_to_dm(db_config: dict[str, str]) -> None:
 
     logger.debug("Connected. Starting merge to DM")
     cursor = conn.cursor()
-    sql = "call dm.p_load_court_cases()"
-    cursor.execute(sql)
+    sproc = "dm_p_load_court_cases"
+    cursor.callproc(sproc)
     conn.commit()
     logger.debug("Merge to DM completed.")
 
@@ -69,7 +71,7 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     result = []
     cursor.execute("""
             select link, title, alias, server_num, parser_type
-            from dm.v_courts_to_refresh
+            from config_v_courts_to_refresh
             """)
     result_1 = cursor.fetchall()
     if result_1:
@@ -144,6 +146,35 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
             conn.commit()
             logger.debug("Commit " + str(idx_r))
     conn.commit()
-    cursor.execute("call stage.p_update_court_cases_row_hash()")
+    cursor.callproc("stage_p_update_court_cases_row_hash")
     conn.commit()
     logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")
+
+
+def init_db(db_config: dict[str, str], force: bool = False) -> None:
+    """executes sql scripts to init db structure"""
+    conn = pymysql.connect(host=db_config.get("host"),
+                           port=int(db_config.get("port")),
+                           user=db_config.get("user"),
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
+                           )
+
+    logger.debug("Connected")
+    cursor = conn.cursor()
+    os.chdir(Path(db_init_config.SQL_SCRIPTS_DIR))
+    is_empty = False
+    if not force:
+        try:
+            cursor.execute(db_init_config.TEST_DB_QUERY)
+        except pymysql.Error:
+            is_empty = True
+    if force or is_empty:
+        for file in db_init_config.INIT_FILES:
+            with open(file, 'r', encoding="utf-8") as sql_file:
+                sql = " ".join(sql_file.readlines())
+                logger.debug(sql)
+                cursor.execute(sql)
+
+        conn.commit()
+    cursor.close()
