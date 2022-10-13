@@ -22,7 +22,8 @@ def parse_page_6(court: dict, check_date: str) -> list[dict[str, str]]:
     result = []
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    options.add_argument("--window-size=1920,1024")
+    options.add_argument("--incognito")
+    options.add_argument("--window-size=1920,1280")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--enable-javascript")

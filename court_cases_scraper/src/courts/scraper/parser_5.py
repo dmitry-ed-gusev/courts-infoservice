@@ -1,13 +1,13 @@
 """scrap moscow mir courts"""
-import time
 from datetime import datetime, timedelta
 
 import threading
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
+from fake_useragent import UserAgent
+from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 import re
+import random
 from bs4 import BeautifulSoup
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -22,16 +22,19 @@ thread_local = threading.local()  # thread local storage
 
 def parse_page_5(court: dict, check_date: str) -> list[dict[str, str]]:
     """parses mos sud page with paging"""
-    # options = webdriver.ChromeOptions()
+    user_agent = UserAgent()
     options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
-    options.add_argument("--window-size=1920,1024")
+    options.add_argument("--incognito")
+    options.add_argument(
+        "--window-size=" + str(1920 + random.randrange(-200, 200)) + "," + str(1024 + random.randrange(-200, 200)))
     options.add_argument("--disable-gpu")
+    options.add_argument("--nogpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--enable-javascript")
-    options.add_argument("--user-agent " + config.USER_AGENT)
-    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    driver = webdriver.Chrome(service=Service(GeckoDriverManager().install()), options=options)
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument("--user-agent " + user_agent.random)
+    driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=options)
 
     result = []
     page_num = 1

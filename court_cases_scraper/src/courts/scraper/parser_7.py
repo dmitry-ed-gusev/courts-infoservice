@@ -15,52 +15,75 @@ from court_cases_scraper.src.courts.config import scraper_config as config
 thread_local = threading.local()  # thread local storage
 
 
-def parse_page_7(court: dict, check_date: str) -> list[dict[str, str]]:
+def parse_page_7(court: dict, check_date: datetime, case_type: str) -> list[dict[str, str]]:
     """parses output page"""
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
-    logger.debug(f"Date {check_date}")
-    retries = 0
-    page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
-        "server_num") + "&H_date=" + check_date)
-    while page.status_code != 200:
-        time.sleep(2)
-        page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
-            "server_num") + "&H_date=" + check_date)
-        retries += 1
-        if retries > config.MAX_RETRIES:
-            break
+    logger.debug("Date " + check_date.strftime("%d-%m-%Y"))
     result = []
-    soup = BeautifulSoup(page.content, 'html.parser')
-    tables = soup.find_all("div", id="tablcont")
-    # <div id="tablcont">
-    for table in tables:
-        section_name = ""
-        sections = table.find_all("tr")
-        # tr
-        for idx, section in enumerate(sections):
-            if idx == 0:
-                continue
-            # setting new section
-            if len(section.contents) == 1:
-                for idx_r, row in enumerate(section.find_all("td")):
-                    section_name = row.text
-            # appending row
-            else:
-                result_row = {"section_name": section_name}
-                # td
-                for idx_r, row in enumerate(section.find_all("td")):
-                    if row.text:
-                        result_row["col" + str(idx_r)] = row.text.strip()
-                    else:
-                        result_row["col" + str(idx_r)] = str(row.contents).strip()
-                    if row.find(href=True):
-                        result_row["col" + str(idx_r) + "_link"] = court.get("link") + row.find(href=True)["href"]
+    empty_flag = False
+    while not empty_flag:
+        page_num = 8
+        order_num = 1
+        retries = 0
+        address = court.get("link") + "/" + case_type + "?sf5=" + check_date.strftime(
+            "%Y-%m-%d") + "&sf5_d=" + check_date.strftime("%Y-%m-%d") + "&pn=" + str(page_num)
+        while True:
+            time.sleep(2)
+            page = session.get(address)
+            retries += 1
+            if retries > config.MAX_RETRIES or page.status_code == 200:
+                break
+        soup = BeautifulSoup(page.content, 'html.parser')
+        tables = soup.find_all("table", class_="decision_table")
+        # <table class=decision_table>
+        for table in tables:
+            sections = table.find_all("tr")
+            if len(sections) == 2:
+                empty_flag = True
+                break
+            # tr
+            for idx, section in enumerate(sections):
+                # skip header
+                if idx == 0:
+                    continue
+                # appending row
+                else:
+                    result_row = {}
+                    # td
+                    for idx_r, row in enumerate(section.find_all("td")):
+                        if idx_r == 0:
+                            continue
+                        if row.text:
+                            result_row["col" + str(idx_r)] = row.text.strip()
+                        else:
+                            result_row["col" + str(idx_r)] = str(row.contents).strip()
+                        if row.find(href=True):
+                            result_row["col" + str(idx_r) + "_link"] = court.get("link") + row.find(href=True)["href"]
+                    match case_type:
+                        case "caselistcs":
+                            result_row["section_name"] = "Гражданские дела"
 
-                result_row["check_date"] = check_date
-                result_row["court"] = court.get("title")
-                result_row["court_alias"] = court.get("alias")
-                result.append(result_row)
+                            if result_row.get("col4"):
+                                result_row["case_info"] = "Истец: " + result_row.get("col4")
+                            else:
+                                result_row["case_info"] = ""
+                            if result_row.get("col5"):
+                                result_row["case_info"] = ". Ответчик: " + result_row.get("col5")
+                            if result_row.get("col6"):
+                                result_row["case_info"] = ". Категория: " + result_row.get("col6")
+                        case "caselistus":
+                            result_row["section_name"] = "Уголовные дела"
+                        case "caselistas":
+                            result_row["section_name"] = "Дела об административных правонарушениях"
+                    result_row["court"] = "Мировой суд " + result_row.get("col1") + ", участок " + result_row.get(
+                        "col2")
+                    result_row["check_date"] = check_date.strftime("%d.%m.%Y")
+                    result_row["court_alias"] = court.get("alias")
+                    result_row["order_num"] = str(order_num)
+                    order_num += 1
+                    result.append(result_row)
+
     return result
 
 
@@ -73,9 +96,9 @@ def parser_type_7(court: dict[str, str], db_config: dict[str, str]) -> None:
     with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_7) as executor:
         for date in misc.daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
                                    datetime.now() + timedelta(days=config.RANGE_FORWARD)):
-            check_date = date.strftime("%d.%m.%Y")
-            future = executor.submit(parse_page_7, court, check_date)
-            futures.append(future)
+            for case_type in case_types:
+                future = executor.submit(parse_page_7, court, date, case_type)
+                futures.append(future)
 
         for task in as_completed(futures):
             result_part = task.result()
