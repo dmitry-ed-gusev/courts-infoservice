@@ -8,7 +8,7 @@
 #            environment (pipenv shell).
 #
 #   Created:  Dmitrii Gusev, 04.10.2022
-#   Modified:
+#   Modified: Dmitrii Gusev, 13.10.2022
 #
 ###############################################################################
 
@@ -81,6 +81,7 @@ printf "Development Virtual Environment setup is starting...\n"
 printf "We are here: [%s]\n" "$(pwd)"
 
 # todo: implement list of dirs/modules and iterating/processing over it
+
 # -- go to the Telegram Bot directory
 cd ${BOT_DIR}
 printf "\nProcessing Telegram Bot\n"
@@ -88,12 +89,12 @@ printf "We are here: [%s]\n" "$(pwd)"
 setup_virtual_env
 cd ..
 
-# -- go to the Scraper directory
-# cd ${SCRAPER_DIR}
-# printf "\nProcessing Scraper\n"
-# printf "We are here: [%s]\n" "$(pwd)"
-# printf "!!!\n"
-# cd ..
+# -- go to the Scraper/Parser directory
+cd ${SCRAPER_DIR}
+printf "\nProcessing Scraper\n"
+printf "We are here: [%s]\n" "$(pwd)"
+setup_virtual_env
+cd ..
 
 # -- we returned to the root project directory
 printf "\nReturned to the project root: [%s]\n\n" "$(pwd)"
