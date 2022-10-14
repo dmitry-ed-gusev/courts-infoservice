@@ -17,21 +17,15 @@
 """
 
 import logging
-import shutil
 import requests
-from pathlib import Path
 from requests import Response
 from requests.adapters import HTTPAdapter, Retry
 from fake_useragent import UserAgent
 from typing import Dict, Tuple, List, AnyStr, Any
+from courts.utils.utilities import threadsafe_function
+from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
 
-from pyutilities.utils.utilities import threadsafe_function
-from pyutilities.exception import PyUtilitiesException
-from pyutilities.defaults import MSG_MODULE_ISNT_RUNNABLE
-
-# init module logger
 log = logging.getLogger(__name__)
-log.debug(f"Logging for module {__name__} is configured.")
 
 HTTP_DEFAULT_TIMEOUT = 20  # default HTTP requests timeout (seconds)
 HTTP_DEFAULT_BACKOFF = 1  # default back off factor (it is better to not touch this value!)
@@ -66,7 +60,7 @@ class WebClient():
     __user_agent_info_updated: bool = False
 
     # class-level variable for storing the fake User Agent info
-    # todo: use fake User Agent without cache - see docs -> UserAgent(cache=False)
+    # todo: use fake User Agent without cache??? - see docs -> UserAgent(cache=False)
     __ua: UserAgent = UserAgent()
 
     @threadsafe_function
@@ -177,25 +171,6 @@ class WebClient():
         """
         log.debug(f"WebClient.options(): {url}. Params: {params}. Data: {data}.")
         return self.__session.options(url, data=data, params=params, allow_redirects=self.__allow_redirects)
-
-    # def get_text_2_files(self, urls: Dict[str, str], dir: str, allow_redicrects: bool,
-    #                      fail_on_error: bool) -> None:
-    #     log.debug(f'get_text_2_files(): saving multiple urls to dir: {dir}.')
-
-    #     if not urls:
-    #         raise ScraperException('Provided empty URLs dictionary!')
-
-    #     if not dir:
-    #         raise ScraperException('Provided empty dir for saving urls!')
-
-    #     os.makedirs(dir, exist_ok=True)  # if all is OK - create dir for the ship data
-
-    #     # check existence of files with additional info and request if missing
-    #     for key in urls:
-    #         file = dir + "/" + key + ".html"
-    #         if not Path(file).exists():  # if file doesn't exist - request it
-    #             # HTTP GET request + save to file
-    #             self.get_text_2_file(urls[key], file, allow_redicrects, fail_on_error)
 
 
 # def http_get_request(url: str, request_params: dict, retry_count: int = 0) -> str:
@@ -317,37 +292,6 @@ class WebClient():
 #     log.info(f"Downloaded file: {url} and put here: {local_path}")
 
 #     return local_path
-
-
-def process_url(url: str, postfix: str = '', format_values: Tuple[str] = None) -> str:
-    log.debug(f'Processing URL [{url}] with postfix [{postfix}] and format values [{format_values}].')
-
-    if not url:
-        raise ScraperException('Provided empty URL for processing!')
-
-    processed_url: str = url
-    if postfix:  # if postfix - add it to the URL string
-        if not processed_url.endswith('/'):
-            processed_url += '/'
-        processed_url += postfix
-
-    if format_values:  # if there are values - format URL string with them
-        processed_url = processed_url.format(*format_values)
-
-    return processed_url
-
-
-def process_urls(urls: Dict[str, str], postfix: str = '', format_values: Tuple[str] = None) -> Dict[str, str]:
-    log.debug('Processing urls dictionary.')
-
-    if not urls:
-        raise ScraperException('Provided empty URLs dictionary for processing!')
-
-    processed: Dict[str, str] = dict()
-    for key in urls:
-        processed[key] = process_url(urls[key], postfix, format_values)
-
-    return processed
 
 
 if __name__ == "__main__":

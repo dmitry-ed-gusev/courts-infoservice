@@ -79,20 +79,25 @@ setup_virtual_env() {
 clear
 printf "Development Virtual Environment setup is starting...\n"
 printf "We are here: [%s]\n" "$(pwd)"
+sleep 2
 
 # todo: implement list of dirs/modules and iterating/processing over it
 
 # -- go to the Telegram Bot directory
+clear
 cd ${BOT_DIR}
 printf "\nProcessing Telegram Bot\n"
 printf "We are here: [%s]\n" "$(pwd)"
+sleep 2
 setup_virtual_env
 cd ..
 
 # -- go to the Scraper/Parser directory
+clear
 cd ${SCRAPER_DIR}
 printf "\nProcessing Scraper\n"
 printf "We are here: [%s]\n" "$(pwd)"
+sleep 2
 setup_virtual_env
 cd ..
 
