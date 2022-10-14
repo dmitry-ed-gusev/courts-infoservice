@@ -1,36 +1,30 @@
 """scrap js page of len obl sud"""
 
-import threading
-from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from loguru import logger
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from court_cases_scraper.src.courts.db import db_tools
-from court_cases_scraper.src.courts.common import misc
-from court_cases_scraper.src.courts.config import scraper_config as config
-
-# setup for multithreading processing
-thread_local = threading.local()  # thread local storage
+from courts.config import scraper_config as config
 
 
-def parse_page_6(court: dict, check_date: str) -> list[dict[str, str]]:
+def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:
     """parses output js page"""
+    check_date = court.get("check_date").strftime("%d.%m.%Y")
     result = []
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    options.add_argument("--window-size=1920,1024")
+    options.add_argument("--incognito")
+    options.add_argument("--window-size=1920,1280")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--enable-javascript")
     options.add_argument("--user-agent " + config.USER_AGENT)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    logger.debug(f"Date {check_date}")
-    driver.get(
-        court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date)
+    url = court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date
+    logger.debug(url)
+    driver.get(url)
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
     tables = soup.find_all("div", id="tablcont")
@@ -63,26 +57,5 @@ def parse_page_6(court: dict, check_date: str) -> list[dict[str, str]]:
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
     driver.close()
-    return result
+    return result, court, config.STAGE_MAPPING_6
 
-
-def parser_type_6(court: dict[str, str], db_config: dict[str, str]) -> None:
-    """Парсер тип 6"""
-    result_len = 0
-    futures = []  # list to store future results of threads
-    db_tools.clean_stage_table(db_config)
-    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6) as executor:
-        for date in misc.daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
-                                   datetime.now() + timedelta(days=config.RANGE_FORWARD)):
-            check_date = date.strftime("%d.%m.%Y")
-            future = executor.submit(parse_page_6, court, check_date)
-            futures.append(future)
-
-        for task in as_completed(futures):
-            result_part = task.result()
-            result_len += len(result_part)
-            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_6, db_config)
-
-    if result_len > 0:
-        db_tools.load_to_dm(db_config)
-        db_tools.log_scrapped_court(db_config, court.get("alias"))

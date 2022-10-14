@@ -6,7 +6,7 @@
 #   Simple (dummy) setup file. Used for compatibility with old versions
 #   of python setuptools.
 #
-#   Created:  Dmitrii Gusev, 05.10.2022
+#   Created:  Dmitrii Gusev, 13.10.2022
 #   Modified:
 #
 ###############################################################################
