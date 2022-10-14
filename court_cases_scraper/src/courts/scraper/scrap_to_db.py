@@ -4,42 +4,31 @@ parse court data and load to stage
 import os
 import sys
 import threading
+
 from dotenv import load_dotenv
 from datetime import datetime
 from loguru import logger
-from court_cases_scraper.src.courts.db import db_tools
-from court_cases_scraper.src.courts.config import scraper_config as config
-from court_cases_scraper.src.courts.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5, parser_6,
+from courts.db import db_tools
+from courts.config import scraper_config as config
+from courts.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5, parser_6,
                                                     parser_7)
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 
 logger.remove()
 # setup for multithreading processing
 thread_local = threading.local()  # thread local storage
 
 
-class NonSilentThreadPoolExecutor(ThreadPoolExecutor):
-    def submit(self, fn, *args, **kwargs):
-        # Submits the wrapped function instead of `fn`
-        return super().submit(self._function_wrapper, fn, *args, **kwargs)
-
-    def _function_wrapper(self, fn, *args, **kwargs):
-        try:
-            return fn(*args, **kwargs)
-        except BaseException as e:
-            logger.exception(e)  # or your way of dealing with any exceptions...
-            # is the following really necessary?
-            # raise sys.exc_info()[0](traceback.format_exc())
-            raise e
-
-
-def running_thread_count(futures) -> int:
+def thread_count(futures: list[Future]) -> tuple[int, int]:
     """count running threads"""
-    r = 0
+    running = 0
+    done = 0
     for future in futures:
         if future.running():
-            r += 1
-    return r
+            running += 1
+        if future.done():
+            running += 1
+    return running, done
 
 
 def threadsafe_function(fn):
@@ -98,13 +87,13 @@ def scrap_courts(courts_config: list[dict[str, str]], db_config: dict[str, str])
     """router with parallel execution"""
     futures = []  # list to store future results of threads
     with (
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor1,
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_2) as executor2,
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3) as executor3,
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_4) as executor4,
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_5) as executor5,
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6) as executor6,
-        NonSilentThreadPoolExecutor(max_workers=config.WORKERS_COUNT_7) as executor7,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor1,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_2) as executor2,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3) as executor3,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_4) as executor4,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_5) as executor5,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6) as executor6,
+        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_7) as executor7,
     ):
         for idx, court in enumerate(courts_config):
             if court.get("parser_type") == "1":
@@ -130,8 +119,8 @@ def scrap_courts(courts_config: list[dict[str, str]], db_config: dict[str, str])
                 futures.append(future)
 
         for task in as_completed(futures):
-            running = running_thread_count(futures)
-            logger.debug(f"{running} threads remaining.")
+            running, done = thread_count(futures)
+            logger.debug(f"{done} completed. {running} running threads remaining.")
             result_part, court_config, mapping = task.result()
             result_len = len(result_part)
             if result_len > 0:

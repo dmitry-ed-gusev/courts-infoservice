@@ -1,10 +1,63 @@
-"""scrapper config"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+    Courts Scraper/Parser config. In case cache dir [.courts_scraper] exists in the current 
+    dir - use it, otherwise cache dir will be placed/used in the user home dir.
+
+    Created:  Gusev Dmitrii, 13.10.2022
+    Modified:
+"""
+
+import os
+import json
+from pathlib import Path
+from dataclasses import asdict
+from dataclasses import dataclass
+from courts.utils.utilities import singleton
+from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
+
+# common constants/defaults
+CACHE_DIR_NAME: str = ".courts_scraper"  # cache dir name
+
+
+# if cache is in curr dir (exists and is dir) - use it, otherwise - use the user
+# home directory (mostly suitable for development, in most cases user home dir will be used)
+def get_cache_dir(base_name: str) -> str:
+    if not base_name:
+        raise ValueError("Empty base name!")
+
+    if Path(base_name).exists() and Path(base_name).is_dir():
+        return base_name
+    else:  # cache dir not exists or is not a dir
+        return str(Path.home()) + '/' + base_name
+
+
+@singleton
+@dataclass(frozen=True)
+class Config():
+    # -- basic directories settings
+    cache_dir: str = get_cache_dir(CACHE_DIR_NAME)
+    log_dir: str = cache_dir + "/logs"  # log directory
+    work_dir: str = str(os.getcwd())  # current working dir
+    user_dir: str = str(Path.home())  # user directory
+
+    encoding: str = "utf-8"  # general encoding
+
+    # post-init method - create necessary sub-dir(s)
+    #   - logging dir
+    def __post_init__(self):
+        os.makedirs(str(self.log_dir), exist_ok=True)
+
+    def __repr__(self):
+        return "Config: " + json.dumps(asdict(self), indent=4)
+
 
 MAX_RETRIES = 20
 RANGE_BACKWARD = 14
 RANGE_FORWARD = 60
-WORKERS_COUNT_1 = 15
-WORKERS_COUNT_2 = 10
+WORKERS_COUNT_1 = 10
+WORKERS_COUNT_2 = 7
 WORKERS_COUNT_3 = 5
 WORKERS_COUNT_4 = 5
 WORKERS_COUNT_5 = 5
@@ -133,3 +186,8 @@ STAGE_MAPPING_8 = [{"name": "court", "mapping": "court"},
                    {"name": "judge", "mapping": "judge"},
                    {"name": "load_dttm", "constant": "now()"}
                    ]
+
+
+if __name__ == "__main__":
+    print(MSG_MODULE_ISNT_RUNNABLE)
+

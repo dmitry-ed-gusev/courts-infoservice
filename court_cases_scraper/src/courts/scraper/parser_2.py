@@ -5,7 +5,7 @@ import re
 from bs4 import BeautifulSoup
 from loguru import logger
 
-from court_cases_scraper.src.courts.config import scraper_config as config
+from courts.config import scraper_config as config
 
 
 def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:

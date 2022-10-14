@@ -4,27 +4,32 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-# mypackage = {editable = true, path = "."}
+courts = {editable = true, path = "."}
 
 [dev-packages]
-ipykernel = "*"
 mock = "*"
 nose2 = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-mock = "*"
-responses = "*"
 mypy = "*"
+types-six = "*"
+types-mock = "*"
+types-requests = "*"
+types-PyYAML = "*"
+types-PyMySql = "*"
 flake8 = "*"
 black = "*"
 pre-commit = "*"
-build = "*"
-sphinx = "*"
 twine = "*"
-types-six = "*"
+build = "*"
+ipykernel = "*"
+responses = "*"
+sphinx = "*"
+hypothesis = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.10"
 
 [pipenv]
 allow_prereleases = true

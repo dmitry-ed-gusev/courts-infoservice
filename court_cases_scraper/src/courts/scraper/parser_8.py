@@ -2,7 +2,8 @@
 from seleniumrequests import Firefox
 import json
 from loguru import logger
-from court_cases_scraper.src.courts.config import scraper_config as config
+
+from courts.config import scraper_config as config
 
 
 def parse_json(court: dict, json_data: json) -> list[dict[str, str]]:
