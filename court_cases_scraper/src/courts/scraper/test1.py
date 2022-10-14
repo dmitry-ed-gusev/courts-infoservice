@@ -1,9 +1,17 @@
+import os
 from seleniumrequests import Firefox
 import json
 from selenium import webdriver
 from fake_useragent import UserAgent
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.firefox.service import Service
+import webbrowser
+import subprocess
+
+from court_cases_scraper.src.courts.config import scraper_config as config
+
+base_url = "https://rad.arbitr.ru"
+
 
 user_agent = UserAgent()
 firefox_options = webdriver.FirefoxOptions()
@@ -11,23 +19,51 @@ firefox_options.add_argument("--incognito")
 firefox_options.add_argument("--no-sandbox")
 firefox_options.add_argument("--enable-webgl")
 firefox_options.add_argument("--enable-javascript")
+firefox_options.add_argument("--dns-prefetch-disable")
+firefox_options.add_argument("--dom-max_script_run_time=15")
+firefox_options.add_argument("--enable-automation")
 firefox_options.add_argument('--disable-blink-features=AutomationControlled')
 firefox_options.add_argument("--user-agent=" + user_agent.random)
 firefox_service = Service(GeckoDriverManager().install())
 
 driver = webdriver.Firefox(service=firefox_service, options=firefox_options)
-base_url = "https://rad.arbitr.ru"
 driver.get(base_url)
 
+# chrome_options = webdriver.ChromeOptions()
+# chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+# Change chrome driver path accordingly
+# chrome_service = Service(ChromeDriverManager().install())
+# driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+# driver.get(base_url)
+# print(driver.title)
+
 cookies = ""
-for host_key, name, value in driver.get_cookies():
-    if len(cookies) > 1:
-        cookies = cookies + "; " + name + "=" + value
-    else:
-        cookies = name + "=" + value
+for cookie in driver.get_cookies():
+    cookies = cookies + "; " + cookie["name"] + "=" +cookie["value"]
+cookies = cookies.lstrip("; ")
 driver.close()
 
 print(cookies)
+req_driver = Firefox()
+
+url_wasm1 = base_url + "/Wasm/api/v1/wasm.js?_=1665703111456"
+headers_wasm1 = {"Accept": "text/javascript, application/javascript, */*",
+                 "Accept-Language": "en-US,en;q=0.5",
+                 "Accept-Encoding": "gzip, deflate, br",
+                 "X-Requested-With": "XMLHttpRequest",
+                 "Connection": "keep-alive",
+                 "Referer": "https://rad.arbitr.ru/",
+                 "Cookie": cookies,
+                 "Sec-Fetch-Dest": "empty",
+                 "Sec-Fetch-Mode": "cors",
+                 "Sec-Fetch-Site": "same-origin",
+                 "Sec-GPC": "1",
+                 "TE": "trailers",
+}
+
+response = req_driver.request("GET", url_wasm1, headers=headers_wasm1)
+wasm_script = response.content
+print(wasm_script)
 
 url_address = base_url + "/Rad/TimetableDay"
 check_date = "2022-10-03"
@@ -50,11 +86,14 @@ headers = {
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "same-origin",
     "TE": "trailers"
-    }
+}
 
 data = '{"needConfirm":false,"DateFrom":"' + check_date + 'T00:00:00","Sides":[],"Cases":[],"Judges":[],"JudgesEx":[],"Courts":["' + court + '"]}'
 
-req_driver = Firefox()
+
+
+
+
 response = req_driver.request("POST", url_address, data=data, headers=headers)
 json_data = json.loads(response.content)
 req_driver.close()

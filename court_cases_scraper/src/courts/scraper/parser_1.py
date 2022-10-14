@@ -1,32 +1,24 @@
 """scrap regular court pages from sudrf"""
-from datetime import datetime, timedelta
 import time
-import threading
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from court_cases_scraper.src.courts.db import db_tools
-from court_cases_scraper.src.courts.common import misc
 from court_cases_scraper.src.courts.config import scraper_config as config
 
-# setup for multithreading processing
-thread_local = threading.local()  # thread local storage
 
-
-def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
+def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:
     """parses output page"""
+    check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = requests.Session()
     session.headers = {"user-agent": config.USER_AGENT}
-    logger.debug(f"Date {check_date}")
+    url = court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date
+    logger.debug(url)
     retries = 0
-    page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
-        "server_num") + "&H_date=" + check_date)
+    page = session.get(url)
     while page.status_code != 200:
         time.sleep(2)
-        page = session.get(court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get(
-            "server_num") + "&H_date=" + check_date)
+        page = session.get(url)
         retries += 1
         if retries > config.MAX_RETRIES:
             break
@@ -61,27 +53,4 @@ def parse_page_1(court: dict, check_date: str) -> list[dict[str, str]]:
                 result_row["court"] = court.get("title")
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
-    return result
-
-
-def parser_type_1(court: dict[str, str], db_config: dict[str, str]) -> None:
-    """Парсер тип 1"""
-    result_len = 0
-    futures = []  # list to store future results of threads
-    db_tools.clean_stage_table(db_config)
-    with ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor:
-        for date in misc.daterange(datetime.now() - timedelta(days=config.RANGE_BACKWARD),
-                                   datetime.now() + timedelta(days=config.RANGE_FORWARD)):
-            check_date = date.strftime("%d.%m.%Y")
-            future = executor.submit(parse_page_1, court, check_date)
-            futures.append(future)
-
-        for task in as_completed(futures):
-            result_part = task.result()
-            result_len += len(result_part)
-            db_tools.load_to_stage(result_part, config.STAGE_MAPPING_1, db_config)
-
-    if result_len > 0:
-        db_tools.load_to_dm(db_config)
-        logger.info("Court " + court.get("alias") + " loaded. Total records " + str(result_len))
-        db_tools.log_scrapped_court(db_config, court.get("alias"))
+    return result, court, config.STAGE_MAPPING_1
