@@ -136,3 +136,5 @@ output/
 .reports/
 .report
 
+# some files that should be ignored
+.DS_Store
