@@ -9,7 +9,7 @@ from courts.db.db_tools import convert_data_to_df
 from courts.web.web_client import WebClient
 
 
-def parse_page(court: dict) -> tuple[DataFrame, dict]:
+def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = WebClient()
@@ -39,7 +39,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
                 if not finished:
                     time.sleep(3)
                 if total_tries > config.MAX_RETRIES:
-                    break
+                    return DataFrame(), court, "failure"
 
             for row in content_json["result"]["data"]:
                 order_num += 1
@@ -88,4 +88,4 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
                 page_num += 1
 
     data_frame = convert_data_to_df(result, config.STAGE_MAPPING_4)
-    return data_frame, court
+    return data_frame, court, "success"

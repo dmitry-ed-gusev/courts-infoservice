@@ -19,7 +19,7 @@ logger.remove()
 thread_local = threading.local()  # thread local storage
 
 
-def thread_count(futures: list[Future]) -> tuple[int, int, int, int]:
+def thread_count(futures: list[Future]) -> tuple[int, int, int]:
     """count running threads"""
     running = 0
     done = 0
@@ -29,27 +29,8 @@ def thread_count(futures: list[Future]) -> tuple[int, int, int, int]:
             running += 1
         if future.done():
             done += 1
-        if future.cancelled():
-            cancelled += 1
     total = len(futures)
-    return running, done, cancelled, total
-
-
-def threadsafe_function(fn):
-    """Decorator making sure that the decorated function is thread safe."""
-    lock = threading.Lock()
-
-    def new(*args, **kwargs):
-        lock.acquire()
-        try:
-            r = fn(*args, **kwargs)
-        # except Exception as e:
-        #     raise e
-        finally:
-            lock.release()
-        return r
-
-    return new
+    return running, done, total
 
 
 def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
@@ -60,34 +41,39 @@ def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_
             "%d.%m.%Y") + " with parser " + court["parser_type"] + ", " + str(
             idx + 1) + "/" + str(len(courts_config)))
         if court.get("parser_type") == "1":
-            result_part, court_config = parser_1.parse_page(court)
+            result_part, court_config, status = parser_1.parse_page(court)
         elif court.get("parser_type") == "2":
-            result_part, court_config = parser_2.parse_page(court)
+            result_part, court_config, status = parser_2.parse_page(court)
         elif court.get("parser_type") == "3":
-            result_part, court_config = parser_3.parse_page(court)
+            result_part, court_config, status = parser_3.parse_page(court)
         elif court.get("parser_type") == "4":
-            result_part, court_config = parser_4.parse_page(court)
+            result_part, court_config, status = parser_4.parse_page(court)
         elif court.get("parser_type") == "9":
-            result_part, court_config = parser_5.parse_page(court)
+            result_part, court_config, status = parser_5.parse_page(court)
         elif court.get("parser_type") == "6":
-            result_part, court_config = parser_6.parse_page(court)
+            result_part, court_config, status = parser_6.parse_page(court)
         elif court.get("parser_type") == "7":
-            result_part, court_config = parser_7.parse_page(court)
+            result_part, court_config, status = parser_7.parse_page(court)
         elif court.get("parser_type") == "8":
-            result_part, court_config = parser_8.parse_page(court)
+            result_part, court_config, status = parser_8.parse_page(court)
         else:
             continue
         result_len = len(result_part)
         if result_len > 0:
             db_tools.load_to_stage_alchemy(result_part, db_config)
             db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
-        logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
-            "alias"] + " date " + court_config["check_date"].strftime(
-            "%d.%m.%Y") + " loaded. Total records " + str(result_len))
-        db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"])
+        if status == "success":
+            logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
+                "alias"] + " date " + court_config["check_date"].strftime(
+                "%d.%m.%Y") + " loaded. Total records " + str(result_len))
+        elif status == "failure":
+            logger.warning("Parser " + court_config["parser_type"] + " court " + court_config[
+                "alias"] + " date " + court_config["check_date"].strftime(
+                "%d.%m.%Y") + " failed.")
+        db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"], status)
 
 
-@threadsafe_function
+@config.threadsafe_function
 def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
     """router with parallel execution"""
     futures = []  # list to store future results of threads
@@ -126,18 +112,23 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
             futures.append(future)
     loaded = 0
     for task in as_completed(futures):
-        running, done, cancelled, total = thread_count(futures)
+        running, done, total = thread_count(futures)
         logger.info(
-            f"{done} completed. {loaded} loaded. {running} running. Total {total}. {cancelled} cancelled.")
-        result_part, court_config = task.result()
+            f"{running} running. {done} completed. {loaded} loaded. Total {total}. " + str(round((total - done)/total*100,2)) + "%")
+        result_part, court_config, status = task.result()
         result_len = len(result_part)
         if result_len > 0:
             db_tools.load_to_stage_alchemy(result_part, db_config)
             db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
-        logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
-            "alias"] + " date " + court_config["check_date"].strftime(
-            "%d.%m.%Y") + " loaded. Total records " + str(result_len))
-        db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"])
+        if status == "success":
+            logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
+                "alias"] + " date " + court_config["check_date"].strftime(
+                "%d.%m.%Y") + " loaded. Total records " + str(result_len))
+        elif status == "failure":
+            logger.warning("Parser " + court_config["parser_type"] + " court " + court_config[
+                "alias"] + " date " + court_config["check_date"].strftime(
+                "%d.%m.%Y") + " failed.")
+        db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"], status)
         loaded += 1
 
 
@@ -146,7 +137,7 @@ def main() -> None:
     # add file logger
     log_file_name = "../log/" + datetime.now().strftime("scrap_to_db_%Y-%m-%d_%H%M%S.log")
     logger.add(sys.stderr, level="DEBUG")
-    logger.add(log_file_name, encoding="utf-8")
+    logger.add(log_file_name, encoding="utf-8", retention="7 days")
 
     # Load environment variables from .env_hosting file from the project root dir
     load_dotenv()
@@ -157,6 +148,7 @@ def main() -> None:
                  "db": os.environ["MYSQL_DB"]
                  }
     courts_config = db_tools.read_courts_config(db_config)
+    db_tools.clean_stage_table()
     scrap_courts(courts_config, db_config)
     # scrap_courts_no_parallel(courts_config, db_config)
 

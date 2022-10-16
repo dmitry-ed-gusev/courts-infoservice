@@ -11,7 +11,7 @@ from courts.db.db_tools import convert_data_to_df
 from courts.web.web_client import WebClient
 
 
-def parse_page(court: dict) -> tuple[DataFrame, dict]:
+def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses mos gor sud page with paging"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = WebClient()
@@ -23,7 +23,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
     while True:
         url = court.get("link") + "&hearingRangeDateFrom=" + check_date + "&hearingRangeDateTo=" + check_date + "&page=" + str(page_num)
         time.sleep(random.randrange(0, 3))
-        page = session.get(url)
+        try:
+            page = session.get(url)
+        except:
+            return DataFrame(), court, "failure"
         soup = BeautifulSoup(page.content, 'html.parser')
         tables = soup.find_all("div", class_="wrapper-search-tables")
         # <div class="wrapper-search-tables">
@@ -66,6 +69,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
         else:
             break
     data_frame = convert_data_to_df(result, config.STAGE_MAPPING_2)
-    return data_frame, court
+    return data_frame, court, "success"
 
 

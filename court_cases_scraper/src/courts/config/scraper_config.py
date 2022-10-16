@@ -8,7 +8,7 @@
     Created:  Gusev Dmitrii, 13.10.2022
     Modified:
 """
-
+import threading
 import os
 import json
 from pathlib import Path
@@ -20,6 +20,22 @@ from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
 # common constants/defaults
 CACHE_DIR_NAME: str = ".courts_scraper"  # cache dir name
 
+
+def threadsafe_function(fn):
+    """Decorator making sure that the decorated function is thread safe."""
+    lock = threading.Lock()
+
+    def new(*args, **kwargs):
+        lock.acquire()
+        try:
+            r = fn(*args, **kwargs)
+        # except Exception as e:
+        #     raise e
+        finally:
+            lock.release()
+        return r
+
+    return new
 
 # if cache is in curr dir (exists and is dir) - use it, otherwise - use the user
 # home directory (mostly suitable for development, in most cases user home dir will be used)
@@ -53,13 +69,40 @@ class Config():
         return "Config: " + json.dumps(asdict(self), indent=4)
 
 
+@singleton
+class CookiesArbitrary:
+    """class to preserve current cookie between worker sessions"""
+    __cookies: str = ""
+    __user_agent: str = ""
+
+    @property
+    @threadsafe_function
+    def cookies(self) -> str:
+        return self.__cookies
+
+    @cookies.setter
+    @threadsafe_function
+    def cookies(self, value: str):
+        self.__cookies = value
+
+    @property
+    @threadsafe_function
+    def user_agent(self) -> str:
+        return self.__user_agent
+
+    @cookies.setter
+    @threadsafe_function
+    def user_agent(self, value: str):
+        self.__user_agent = value
+
+
 MAX_RETRIES = 20
 RANGE_BACKWARD = 14
-RANGE_FORWARD = 60
-WORKERS_COUNT_1 = 5
+RANGE_FORWARD = 45
+WORKERS_COUNT_1 = 4
 WORKERS_COUNT_2 = 5
-WORKERS_COUNT_3 = 3
-WORKERS_COUNT_4 = 5
+WORKERS_COUNT_3 = 1
+WORKERS_COUNT_4 = 3
 WORKERS_COUNT_5 = 5
 WORKERS_COUNT_6 = 3
 WORKERS_COUNT_7 = 2

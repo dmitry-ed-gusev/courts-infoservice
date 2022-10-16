@@ -10,7 +10,25 @@ from court_cases_scraper.src.courts.config import scraper_config as config
 from court_cases_scraper.src.courts.config import db_init_config
 
 
-def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: datetime) -> None:
+def clean_stage_table(db_config: dict[str, str]):
+    """cleans stage table"""
+    logger.debug("Cleaning stage table.")
+    conn = pymysql.connect(host=db_config.get("host"),
+                           port=int(db_config.get("port")),
+                           user=db_config.get("user"),
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
+                           )
+
+    cursor = conn.cursor()
+    sql = "delete from " + config.STAGE_TABLE
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+    logger.debug("Stage table cleaned.")
+
+
+def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: datetime, status: str) -> None:
     """adds court scrap to log"""
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
@@ -20,9 +38,9 @@ def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: 
                            )
 
     cursor = conn.cursor()
-    sql = ("insert into config_court_cases_scrap_log (court, check_date, load_dttm)"
-           "values (%(court_alias)s, %(check_date)s, now())")
-    cursor.execute(sql, {"court_alias": court_alias, "check_date": check_date})
+    sql = ("insert into config_court_cases_scrap_log (court, check_date, status, load_dttm)"
+           "values (%(court_alias)s, %(check_date)s, %(status)s, now())")
+    cursor.execute(sql, {"court_alias": court_alias, "check_date": check_date, "status": status})
     conn.commit()
     conn.close()
 
@@ -79,6 +97,7 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
             select link, title, alias, server_num, parser_type, check_date
             from config_v_courts_to_refresh
             where check_date between %(start_date)s and %(end_date)s
+            and parser_type not in('8')
             order by check_date
             """, {"start_date": datetime.now() - timedelta(days=config.RANGE_BACKWARD),
                   "end_date": datetime.now() + timedelta(days=config.RANGE_FORWARD)})

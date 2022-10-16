@@ -11,9 +11,9 @@ from courts.config import scraper_config as config
 from courts.db.db_tools import convert_data_to_df
 
 
-def parse_page(court: dict) -> tuple[DataFrame, dict]:
+def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
-    session = WebClient
+    session = WebClient()
     session.headers = {"user-agent": config.USER_AGENT}
     check_date = court.get("check_date").strftime("%Y-%m-%d")
     result = []
@@ -27,12 +27,11 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
             retries = 0
             url = court.get("link") + "/" + case_type + "/?sf5=" + check_date + "&sf5_d=" + check_date + "&pn=" + str(page_num)
             logger.debug(url)
-            while True:
-                time.sleep(random.randrange(0, 3))
+            time.sleep(random.randrange(0, 3))
+            try:
                 page = session.get(url)
-                retries += 1
-                if retries > config.MAX_RETRIES or page.status_code == 200:
-                    break
+            except:
+                return DataFrame(), court, "failure"
             soup = BeautifulSoup(page.content, 'html.parser')
             tables = soup.find_all("table", class_="decision_table")
             # <table class=decision_table>
@@ -105,4 +104,4 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
                         result.append(result_row)
                 page_num += 1
     data_frame = convert_data_to_df(result, config.STAGE_MAPPING_7)
-    return data_frame, court
+    return data_frame, court, "success"

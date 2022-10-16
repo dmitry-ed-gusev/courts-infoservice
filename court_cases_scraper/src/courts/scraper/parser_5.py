@@ -14,11 +14,16 @@ from court_cases_scraper.src.courts.config import selenium_config
 from courts.db.db_tools import convert_data_to_df
 
 
-def parse_page(court: dict) -> tuple[DataFrame, dict]:
+def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses mos sud page with paging"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
-    driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=selenium_config.firefox_options)
-
+    while True:
+        try:
+            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+                                       options=selenium_config.firefox_options)
+            break
+        except:
+            time.sleep(3)
     result = []
     page_num = 1
     pages_total = 1
@@ -32,8 +37,8 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
         while True:
             retries += 1
             time.sleep(random.randrange(0, 3))
-            if retries > 10:
-                raise Exception("no valid response: " + driver.page_source)
+            if retries > 4:
+                return DataFrame(), court, "failure"
             try:
                 driver.get(url)
                 break
@@ -83,5 +88,5 @@ def parse_page(court: dict) -> tuple[DataFrame, dict]:
             break
     driver.close()
     data_frame = convert_data_to_df(result, config.STAGE_MAPPING_5)
-    return data_frame, court
+    return data_frame, court, "success"
 
