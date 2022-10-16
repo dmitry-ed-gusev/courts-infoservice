@@ -16,7 +16,7 @@ from court_cases_scraper.src.courts.scraper import (parser_1,
                                                     parser_7,
                                                     parser_8)
 
-test_mode = 8
+test_mode = 1
 check_date = "10.10.2022"
 check_date_dt = datetime.strptime("10.10.2022", "%d.%m.%Y")
 
@@ -29,6 +29,10 @@ db_config = {"host": os.environ["MYSQL_HOST"],
              "db": os.environ["MYSQL_DB"]}
 
 match test_mode:
+    case 1:
+        court = {"title": "Василеостровский районный суд", "link": "https://vos--spb.sudrf.ru", "server_num": "1", "alias": "spb-vos",
+                 "check_date": check_date_dt}
+        result, out_court, mapping = parser_1.parse_page(court)
     case 3:
         court = {"title": "KRD_KKS", "link": "https://kraevoi--krd.sudrf.ru", "server_num": "1", "alias": "krd-kks",
                  "check_date": check_date_dt}
@@ -46,6 +50,7 @@ match test_mode:
         result = []
         mapping = []
         out_court = []
+db_tools.load_to_stage_alchemy(result, mapping, db_config, court["alias"], court["check_date"])
 
 print(result)
 print(len(result))

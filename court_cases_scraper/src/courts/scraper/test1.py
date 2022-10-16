@@ -4,49 +4,69 @@ import json
 from selenium import webdriver
 from fake_useragent import UserAgent
 from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.chrome.service import Service as ChromeService
 import webbrowser
-import subprocess
+import pandas
+import time
 
 from court_cases_scraper.src.courts.config import scraper_config as config
 
+scenario = 2
 base_url = "https://rad.arbitr.ru"
-
-
 user_agent = UserAgent()
-firefox_options = webdriver.FirefoxOptions()
-firefox_options.add_argument("--incognito")
-firefox_options.add_argument("--no-sandbox")
-firefox_options.add_argument("--enable-webgl")
-firefox_options.add_argument("--enable-javascript")
-firefox_options.add_argument("--dns-prefetch-disable")
-firefox_options.add_argument("--dom-max_script_run_time=15")
-firefox_options.add_argument("--enable-automation")
-firefox_options.add_argument('--disable-blink-features=AutomationControlled')
-firefox_options.add_argument("--user-agent=" + user_agent.random)
-firefox_service = Service(GeckoDriverManager().install())
+if scenario == 1:
+    firefox_options = webdriver.FirefoxOptions()
+    firefox_options.add_argument("--incognito")
+    firefox_options.add_argument("--headless")
+    firefox_options.add_argument("--no-sandbox")
+    firefox_options.add_argument("--enable-javascript")
+    firefox_options.add_argument("--enable-automation")
+    firefox_options.add_argument('--disable-blink-features=AutomationControlled')
+    firefox_options.add_argument("--user-agent=" + user_agent.random)
+    # firefox_options.set_preference("dom.max_chrome_script_run_time", 0)
+    # firefox_options.set_preference("dom.max_script_run_time", 0)
 
-driver = webdriver.Firefox(service=firefox_service, options=firefox_options)
-driver.get(base_url)
+    firefox_service = Service(GeckoDriverManager().install())
 
-# chrome_options = webdriver.ChromeOptions()
-# chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
-# Change chrome driver path accordingly
-# chrome_service = Service(ChromeDriverManager().install())
-# driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
-# driver.get(base_url)
-# print(driver.title)
+    driver = Firefox(service=firefox_service, options=firefox_options)
+    driver.get(base_url)
 
-cookies = ""
-for cookie in driver.get_cookies():
-    cookies = cookies + "; " + cookie["name"] + "=" +cookie["value"]
-cookies = cookies.lstrip("; ")
-driver.close()
+    # chrome_options = webdriver.ChromeOptions()
+    # chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+    # Change chrome driver path accordingly
+    # chrome_service = Service(ChromeDriverManager().install())
+    # driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+    # driver.get(base_url)
+    # print(driver.title)
 
-print(cookies)
-req_driver = Firefox()
+elif scenario == 2:
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0")
+    chrome_options.add_argument("--incognito")
+    chrome_options.add_argument("--disable-plugins-discovery");
+    chrome_options.add_argument("--start-maximized")
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    service = ChromeService(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.set_window_position(-2000, 0)
+    driver.get(base_url)
+    # waiting for scripts to complete and generate last cookie - wasm
+    while "wasm" not in (i["name"] for i in driver.get_cookies()):
+        time.sleep(3)
 
-url_wasm1 = base_url + "/Wasm/api/v1/wasm.js?_=1665703111456"
+    cookies = ""
+    for cookie in driver.get_cookies():
+        cookies = cookies + "; " + cookie["name"] + "=" + cookie["value"]
+    cookies = cookies.lstrip("; ")
+
+    print(cookies)
+
+url_wasm1 = base_url + "/Wasm/api/v1/wasm.js?_=" + str(int(time.time()))
 headers_wasm1 = {"Accept": "text/javascript, application/javascript, */*",
                  "Accept-Language": "en-US,en;q=0.5",
                  "Accept-Encoding": "gzip, deflate, br",
@@ -59,11 +79,14 @@ headers_wasm1 = {"Accept": "text/javascript, application/javascript, */*",
                  "Sec-Fetch-Site": "same-origin",
                  "Sec-GPC": "1",
                  "TE": "trailers",
-}
+                 }
 
-response = req_driver.request("GET", url_wasm1, headers=headers_wasm1)
-wasm_script = response.content
+response = driver.request("GET", url_wasm1, headers=headers_wasm1)
+wasm_script = response.content.decode("utf-8")
 print(wasm_script)
+
+driver.execute_script(wasm_script)
+
 
 url_address = base_url + "/Rad/TimetableDay"
 check_date = "2022-10-03"
@@ -90,12 +113,9 @@ headers = {
 
 data = '{"needConfirm":false,"DateFrom":"' + check_date + 'T00:00:00","Sides":[],"Cases":[],"Judges":[],"JudgesEx":[],"Courts":["' + court + '"]}'
 
-
-
-
-
 response = req_driver.request("POST", url_address, data=data, headers=headers)
 json_data = json.loads(response.content)
 req_driver.close()
 print(len(json_data))
 print(json_data)
+

@@ -219,9 +219,12 @@ insert into config_court_scrap_config (link, title, alias, skip, server_num, par
 insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://stavmirsud.ru/officework', 'Мировой суд (Город Ставрополь)', 'stav-mir', False, null, '7', '20:00');
 
 -- arbitr
-insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Ставропольского края', 'arbitr-stav', True, 'STAVROPOL', '8', '20:00');
-insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'Верховный суд РФ', 'arbitr-vs', True, 'VS', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Ставропольского края', 'arbitr-stav', False, 'STAVROPOL', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'Верховный суд РФ', 'arbitr-vs', False, 'VS', '8', '20:00');
 insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'Высший Арбитражный Суд РФ', 'arbitr-vas', True, 'VAS', '8', '20:00');
-insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Московского округа', 'arbitr-fasmo', True, 'FASMO', '8', '20:00');
-insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Северо-Западного округа', 'arbitr-fasszo', True, 'FASSZO', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Московского округа', 'arbitr-fasmo', False, 'FASMO', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Северо-Западного округа', 'arbitr-fasszo', False, 'FASSZO', '8', '20:00');
 insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС города Москвы', 'arbitr-msc', True, 'MSK', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Волго-Вятского округа', 'arbitr-fasvvo', False, 'FASVVO', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Северо-Кавказского округа', 'arbitr-fassko', False, 'FASSKO', '8', '20:00');
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', '1 арбитражный апелляционный суд', 'arbitr-1aas', False, '1AAS', '8', '20:00');

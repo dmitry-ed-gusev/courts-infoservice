@@ -3,6 +3,8 @@ from pathlib import Path
 import pymysql
 from loguru import logger
 from datetime import datetime, timedelta
+from sqlalchemy import create_engine, event, text as sa_text
+from pandas import DataFrame
 
 from court_cases_scraper.src.courts.config import scraper_config as config
 from court_cases_scraper.src.courts.config import db_init_config
@@ -111,9 +113,6 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
 
     logger.debug("Connected")
     cursor = conn.cursor()
-    sql = f"delete from {config.STAGE_TABLE} where court_alias=%(court_alias)s and check_date=%(check_date)s"
-    cursor.execute(sql, {"court_alias": court_alias, "check_date": check_date.strftime("%d.%m.%Y")})
-    conn.commit()
 
     sql_part1 = f"INSERT INTO {config.STAGE_TABLE} ("
     sql_part2 = ""
@@ -128,24 +127,57 @@ def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]
     sql_statement = sql_part1.rstrip(", ") + ") VALUES (" + sql_part2.rstrip(", ") + ")"
 
     # logger.debug(sql_statement)
-
+    values = []
     logger.debug("Stage data load start")
     for idx_r, row in enumerate(data):
-        values = []
+        value = []
         for idx_c, col in enumerate(stage_mapping):
             if row.get(col.get("mapping")):
-                values.append(row.get(col.get("mapping")))
+                value.append(row.get(col.get("mapping")))
             elif col.get("mapping"):
-                values.append(None)
-        cursor.execute(sql_statement, values)
-        if idx_r % config.COMMIT_INTERVAL == 0 and idx_r > 0:
-            conn.commit()
-            logger.debug("Commit " + str(idx_r))
+                value.append(None)
+        values.append(value)
+    cursor.executemany(sql_statement, values)
     conn.commit()
     cursor.callproc("stage_p_update_court_cases_row_hash")
     conn.commit()
     logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")
     conn.close()
+
+
+def load_to_stage_alchemy(data_frame: DataFrame, db_config: dict[str, str]) -> None:
+    """loads parsed data to stage"""
+    if len(data_frame) == 0:
+        return
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+    logger.debug("Loading to stage")
+    data_frame.to_sql(config.STAGE_TABLE, engine, index=False, if_exists="append")
+
+    connection = engine.connect()
+    connection.execute(sa_text("call stage_p_update_court_cases_row_hash()"))
+    connection.commit()
+    logger.debug("Loaded " + str(len(data_frame)) + " rows to stage.")
+    connection.close()
+
+
+def convert_data_to_df(data: list[dict[str, str]], stage_mapping: list[dict[str, str]]) -> DataFrame:
+    values = []
+    for idx_r, row in enumerate(data):
+        value = {}
+        for idx_c, col in enumerate(stage_mapping):
+            if row.get(col.get("mapping")):
+                value[col["name"]] = row.get(col.get("mapping"))
+            elif col.get("mapping"):
+                value[col["name"]] = None
+        values.append(value)
+    data_frame = DataFrame(values)
+    return data_frame
 
 
 def init_db(db_config: dict[str, str], force: bool = False) -> None:

@@ -1,14 +1,18 @@
 """scrap spb miroviye sudy"""
 import time
-import requests
+import random
 from loguru import logger
+from pandas import DataFrame
+
 from courts.config import scraper_config as config
+from courts.db.db_tools import convert_data_to_df
+from courts.web.web_client import WebClient
 
 
-def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:
+def parse_page(court: dict) -> tuple[DataFrame, dict]:
     """parses output page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
-    session = requests.Session()
+    session = WebClient()
     result = []
     case_types = ["adm", "civil", "criminal", "public"]
     for case_type in case_types:
@@ -16,16 +20,12 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
         page_num = 1
         while True:
             content_json = None
-            while True:
-                api_search = court.get("link") + \
-                             "/cases/api/search/?adm_person_type=all&article=&civil_person_type=" + \
-                             "all&court_number=&criminal_person_type=all&date_from=" + check_date + \
-                             "&date_to=" + check_date + "&full_name=&id=&page=" + str(page_num) + "&type=" + case_type
-                get_search = session.get(api_search)
-                if get_search.status_code == 200:
-                    break
-                else:
-                    time.sleep(2)
+            time.sleep(random.randrange(0, 3))
+            api_search = court.get("link") + \
+                         "/cases/api/search/?adm_person_type=all&article=&civil_person_type=" + \
+                         "all&court_number=&criminal_person_type=all&date_from=" + check_date + \
+                         "&date_to=" + check_date + "&full_name=&id=&page=" + str(page_num) + "&type=" + case_type
+            get_search = session.get(api_search)
             logger.debug(api_search)
             search_id = get_search.json()["id"]
             finished = False
@@ -37,7 +37,7 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
                     content_json = content.json()
                     finished = content_json["finished"]
                 if not finished:
-                    time.sleep(2)
+                    time.sleep(3)
                 if total_tries > config.MAX_RETRIES:
                     break
 
@@ -87,4 +87,5 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
             else:
                 page_num += 1
 
-    return result, court, config.STAGE_MAPPING_4
+    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_4)
+    return data_frame, court

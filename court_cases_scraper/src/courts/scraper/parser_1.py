@@ -1,27 +1,24 @@
 """scrap regular court pages from sudrf"""
-import time
-import requests
 from bs4 import BeautifulSoup
 from loguru import logger
+from pandas import DataFrame
+import time
+import random
 
 from courts.config import scraper_config as config
+from courts.db.db_tools import convert_data_to_df
+from courts.web.web_client import WebClient
 
 
-def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:
+def parse_page(court: dict) -> tuple[DataFrame, dict]:
     """parses output page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
-    session = requests.Session()
+    session = WebClient()
     session.headers = {"user-agent": config.USER_AGENT}
     url = court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date
     logger.debug(url)
-    retries = 0
+    time.sleep(random.randrange(0, 3))
     page = session.get(url)
-    while page.status_code != 200:
-        time.sleep(2)
-        page = session.get(url)
-        retries += 1
-        if retries > config.MAX_RETRIES:
-            break
     result = []
     soup = BeautifulSoup(page.content, 'html.parser')
     tables = soup.find_all("div", id="tablcont")
@@ -53,4 +50,5 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
                 result_row["court"] = court.get("title")
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
-    return result, court, config.STAGE_MAPPING_1
+    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_1)
+    return data_frame, court

@@ -11,7 +11,7 @@ from loguru import logger
 from courts.db import db_tools
 from courts.config import scraper_config as config
 from courts.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5, parser_6,
-                                                    parser_7)
+                            parser_7, parser_8)
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 
 logger.remove()
@@ -19,16 +19,20 @@ logger.remove()
 thread_local = threading.local()  # thread local storage
 
 
-def thread_count(futures: list[Future]) -> tuple[int, int]:
+def thread_count(futures: list[Future]) -> tuple[int, int, int, int]:
     """count running threads"""
     running = 0
     done = 0
+    cancelled = 0
     for future in futures:
         if future.running():
             running += 1
         if future.done():
-            running += 1
-    return running, done
+            done += 1
+        if future.cancelled():
+            cancelled += 1
+    total = len(futures)
+    return running, done, cancelled, total
 
 
 def threadsafe_function(fn):
@@ -48,89 +52,93 @@ def threadsafe_function(fn):
     return new
 
 
-def scrap_courts_no_parallel(courts_config: list[dict[str, str]], db_config: dict[str, str]):
+def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
     """router with parallel execution"""
 
     for idx, court in enumerate(courts_config):
-        logger.info("Processing " + court.get("alias") + " date " + court.get("check_date").strftime(
-            "%d.%m.%Y") + " with parser " + court.get("parser_type") + ", " + str(
+        logger.info("Processing " + court["alias"] + " date " + court["check_date"].strftime(
+            "%d.%m.%Y") + " with parser " + court["parser_type"] + ", " + str(
             idx + 1) + "/" + str(len(courts_config)))
         if court.get("parser_type") == "1":
-            result_part, court_config, mapping = parser_1.parse_page(court)
+            result_part, court_config = parser_1.parse_page(court)
         elif court.get("parser_type") == "2":
-            result_part, court_config, mapping = parser_2.parse_page(court)
+            result_part, court_config = parser_2.parse_page(court)
         elif court.get("parser_type") == "3":
-            result_part, court_config, mapping = parser_3.parse_page(court)
+            result_part, court_config = parser_3.parse_page(court)
         elif court.get("parser_type") == "4":
-            result_part, court_config, mapping = parser_4.parse_page(court)
-        elif court.get("parser_type") == "5":
-            result_part, court_config, mapping = parser_5.parse_page(court)
+            result_part, court_config = parser_4.parse_page(court)
+        elif court.get("parser_type") == "9":
+            result_part, court_config = parser_5.parse_page(court)
         elif court.get("parser_type") == "6":
-            result_part, court_config, mapping = parser_6.parse_page(court)
+            result_part, court_config = parser_6.parse_page(court)
         elif court.get("parser_type") == "7":
-            result_part, court_config, mapping = parser_7.parse_page(court)
+            result_part, court_config = parser_7.parse_page(court)
+        elif court.get("parser_type") == "8":
+            result_part, court_config = parser_8.parse_page(court)
         else:
             continue
         result_len = len(result_part)
         if result_len > 0:
-            db_tools.load_to_stage(result_part, mapping, db_config, court_config.get("alias"),
-                                   court_config.get("check_date"))
-            db_tools.load_to_dm(db_config, court_config.get("alias"), court_config.get("check_date"))
-        logger.info("Parser " + court_config.get("parser_type") + " court " + court_config.get(
-            "alias") + " date " + court_config.get("check_date").strftime(
+            db_tools.load_to_stage_alchemy(result_part, db_config)
+            db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
+        logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
+            "alias"] + " date " + court_config["check_date"].strftime(
             "%d.%m.%Y") + " loaded. Total records " + str(result_len))
-        db_tools.log_scrapped_court(db_config, court_config.get("alias"), court_config.get("check_date"))
+        db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"])
 
 
 @threadsafe_function
-def scrap_courts(courts_config: list[dict[str, str]], db_config: dict[str, str]):
+def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
     """router with parallel execution"""
     futures = []  # list to store future results of threads
-    with (
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1) as executor1,
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_2) as executor2,
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3) as executor3,
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_4) as executor4,
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_5) as executor5,
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6) as executor6,
-        ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_7) as executor7,
-    ):
-        for idx, court in enumerate(courts_config):
-            if court.get("parser_type") == "1":
-                future = executor1.submit(parser_1.parse_page, court)
-                futures.append(future)
-            elif court.get("parser_type") == "2":
-                future = executor2.submit(parser_2.parse_page, court)
-                futures.append(future)
-            elif court.get("parser_type") == "3":
-                future = executor3.submit(parser_3.parse_page, court)
-                futures.append(future)
-            elif court.get("parser_type") == "4":
-                future = executor4.submit(parser_4.parse_page, court)
-                futures.append(future)
-            elif court.get("parser_type") == "5":
-                future = executor5.submit(parser_5.parse_page, court)
-                futures.append(future)
-            elif court.get("parser_type") == "6":
-                future = executor6.submit(parser_6.parse_page, court)
-                futures.append(future)
-            elif court.get("parser_type") == "7":
-                future = executor7.submit(parser_7.parse_page, court)
-                futures.append(future)
-
-        for task in as_completed(futures):
-            running, done = thread_count(futures)
-            logger.debug(f"{done} completed. {running} running threads remaining.")
-            result_part, court_config, mapping = task.result()
-            result_len = len(result_part)
-            if result_len > 0:
-                db_tools.load_to_stage(result_part, mapping, db_config, court_config.get("alias"),
-                                       court_config.get("check_date"))
-                db_tools.load_to_dm(db_config, court_config.get("alias"), court_config.get("check_date"))
-            logger.info("Parser " + court_config.get("parser_type") + " court " + court_config.get(
-                "alias") + " date " + court_config.get("check_date").strftime(
-                "%d.%m.%Y") + " loaded. Total records " + str(result_len))
-            db_tools.log_scrapped_court(db_config, court_config.get("alias"), court_config.get("check_date"))
+    executor1 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_1)
+    executor2 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_2)
+    executor3 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_3)
+    executor4 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_4)
+    executor5 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_5)
+    executor6 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_6)
+    executor7 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_7)
+    executor8 = ThreadPoolExecutor(max_workers=config.WORKERS_COUNT_8)
+    for idx, court in enumerate(courts_config):
+        if court.get("parser_type") == "1":
+            future = executor1.submit(parser_1.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "2":
+            future = executor2.submit(parser_2.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "3":
+            future = executor3.submit(parser_3.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "4":
+            future = executor4.submit(parser_4.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "5":
+            future = executor5.submit(parser_5.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "6":
+            future = executor6.submit(parser_6.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "7":
+            future = executor7.submit(parser_7.parse_page, court)
+            futures.append(future)
+        elif court.get("parser_type") == "8":
+            future = executor8.submit(parser_8.parse_page, court)
+            futures.append(future)
+    loaded = 0
+    for task in as_completed(futures):
+        running, done, cancelled, total = thread_count(futures)
+        logger.info(
+            f"{done} completed. {loaded} loaded. {running} running. Total {total}. {cancelled} cancelled.")
+        result_part, court_config = task.result()
+        result_len = len(result_part)
+        if result_len > 0:
+            db_tools.load_to_stage_alchemy(result_part, db_config)
+            db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
+        logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
+            "alias"] + " date " + court_config["check_date"].strftime(
+            "%d.%m.%Y") + " loaded. Total records " + str(result_len))
+        db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"])
+        loaded += 1
 
 
 def main() -> None:

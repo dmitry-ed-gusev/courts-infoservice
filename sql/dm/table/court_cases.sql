@@ -38,3 +38,5 @@ PARTITION BY RANGE ( MONTH(CHECK_DATE) ) (
 */
 
 alter table dm_court_cases add index idx_case_num (case_num);
+
+alter table dm_court_cases add index idx_court_alias (court_alias);
