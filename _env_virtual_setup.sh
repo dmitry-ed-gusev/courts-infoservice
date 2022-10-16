@@ -8,7 +8,7 @@
 #            environment (pipenv shell).
 #
 #   Created:  Dmitrii Gusev, 04.10.2022
-#   Modified: Dmitrii Gusev, 13.10.2022
+#   Modified: Dmitrii Gusev, 16.10.2022
 #
 ###############################################################################
 
@@ -18,6 +18,8 @@ set -euf -o pipefail
 # -- project modules directories
 SCRAPER_DIR='court_cases_scraper'
 BOT_DIR='court_cases_telegram_bot'
+WEBUI_DIR='court_cases_web-ui'
+
 # -- verbose output mode
 VERBOSE="--verbose"
 # -- set up encoding/language
@@ -99,6 +101,18 @@ printf "\nProcessing Scraper\n"
 printf "We are here: [%s]\n" "$(pwd)"
 sleep 2
 setup_virtual_env
+cd ..
+
+# -- go to the Scraper/Parser directory
+clear
+cd ${WEBUI_DIR}
+printf "\nProcessing Web UI\n"
+printf "We are here: [%s]\n" "$(pwd)"
+sleep 2
+setup_virtual_env
+# additional for Web UI - generate [requirements.txt] - for hosting
+printf "\nGenerating [requirements.txt] file\n"
+pipenv requirements > requirements.txt
 cd ..
 
 # -- we returned to the root project directory
