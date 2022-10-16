@@ -138,3 +138,7 @@ output/
 
 # some files that should be ignored
 .DS_Store
+
+# concrete CSV files to be ignored
+dm_court_cases.csv
+dm_v_court_stats.csv
