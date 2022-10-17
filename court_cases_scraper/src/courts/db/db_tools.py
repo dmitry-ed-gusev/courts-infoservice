@@ -3,12 +3,31 @@ from pathlib import Path
 import pymysql
 from loguru import logger
 from datetime import datetime, timedelta
+from sqlalchemy import create_engine, text as sa_text
+from pandas import DataFrame
 
-from court_cases_scraper.src.courts.config import scraper_config as config
-from court_cases_scraper.src.courts.config import db_init_config
+from court_cases_scraper.src.courts.config import scraper_config, db_init_config
 
 
-def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: datetime) -> None:
+def clean_stage_table(db_config: dict[str, str]):
+    """cleans stage table"""
+    logger.debug("Cleaning stage table.")
+    conn = pymysql.connect(host=db_config.get("host"),
+                           port=int(db_config.get("port")),
+                           user=db_config.get("user"),
+                           passwd=db_config.get("passwd"),
+                           database=db_config.get("db"),
+                           )
+
+    cursor = conn.cursor()
+    sql = "delete from " + scraper_config.STAGE_TABLE
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+    logger.debug("Stage table cleaned.")
+
+
+def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: datetime, status: str) -> None:
     """adds court scrap to log"""
     conn = pymysql.connect(host=db_config.get("host"),
                            port=int(db_config.get("port")),
@@ -18,9 +37,9 @@ def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: 
                            )
 
     cursor = conn.cursor()
-    sql = ("insert into config_court_cases_scrap_log (court, check_date, load_dttm)"
-           "values (%(court_alias)s, %(check_date)s, now())")
-    cursor.execute(sql, {"court_alias": court_alias, "check_date": check_date})
+    sql = ("insert into config_court_cases_scrap_log (court, check_date, status, load_dttm)"
+           "values (%(court_alias)s, %(check_date)s, %(status)s, now())")
+    cursor.execute(sql, {"court_alias": court_alias, "check_date": check_date, "status": status})
     conn.commit()
     conn.close()
 
@@ -78,8 +97,8 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
             from config_v_courts_to_refresh
             where check_date between %(start_date)s and %(end_date)s
             order by check_date
-            """, {"start_date": datetime.now() - timedelta(days=config.RANGE_BACKWARD),
-                  "end_date": datetime.now() + timedelta(days=config.RANGE_FORWARD)})
+            """, {"start_date": datetime.now() - timedelta(days=scraper_config.RANGE_BACKWARD),
+                  "end_date": datetime.now() + timedelta(days=scraper_config.RANGE_FORWARD)})
     result_1 = cursor.fetchall()
     if result_1:
         for row1 in result_1:
@@ -96,56 +115,39 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     return result
 
 
-def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]], db_config: dict[str, str],
-                  court_alias: str, check_date: datetime) -> None:
+def load_to_stage_alchemy(data_frame: DataFrame, db_config: dict[str, str]) -> None:
     """loads parsed data to stage"""
-    if len(data) == 0:
+    if len(data_frame) == 0:
         return
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+    logger.debug("Loading to stage")
+    data_frame.to_sql(scraper_config.STAGE_TABLE, engine, index=False, if_exists="append")
 
-    conn = pymysql.connect(host=db_config.get("host"),
-                           port=int(db_config.get("port")),
-                           user=db_config.get("user"),
-                           passwd=db_config.get("passwd"),
-                           database=db_config.get("db"),
-                           )
+    connection = engine.connect()
+    connection.execute(sa_text("call stage_p_update_court_cases_row_hash()"))
+    connection.commit()
+    logger.debug("Loaded " + str(len(data_frame)) + " rows to stage.")
+    connection.close()
 
-    logger.debug("Connected")
-    cursor = conn.cursor()
-    sql = f"delete from {config.STAGE_TABLE} where court_alias=%(court_alias)s and check_date=%(check_date)s"
-    cursor.execute(sql, {"court_alias": court_alias, "check_date": check_date.strftime("%d.%m.%Y")})
-    conn.commit()
 
-    sql_part1 = f"INSERT INTO {config.STAGE_TABLE} ("
-    sql_part2 = ""
-
-    for field in stage_mapping:
-        sql_part1 = sql_part1 + field.get("name") + ", "
-        if field.get("constant"):
-            sql_part2 = sql_part2 + field.get("constant") + ", "
-        else:
-            sql_part2 = sql_part2 + "%s, "
-
-    sql_statement = sql_part1.rstrip(", ") + ") VALUES (" + sql_part2.rstrip(", ") + ")"
-
-    # logger.debug(sql_statement)
-
-    logger.debug("Stage data load start")
+def convert_data_to_df(data: list[dict[str, str]], stage_mapping: list[dict[str, str]]) -> DataFrame:
+    values = []
     for idx_r, row in enumerate(data):
-        values = []
+        value = {}
         for idx_c, col in enumerate(stage_mapping):
             if row.get(col.get("mapping")):
-                values.append(row.get(col.get("mapping")))
+                value[col["name"]] = row.get(col.get("mapping"))
             elif col.get("mapping"):
-                values.append(None)
-        cursor.execute(sql_statement, values)
-        if idx_r % config.COMMIT_INTERVAL == 0 and idx_r > 0:
-            conn.commit()
-            logger.debug("Commit " + str(idx_r))
-    conn.commit()
-    cursor.callproc("stage_p_update_court_cases_row_hash")
-    conn.commit()
-    logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")
-    conn.close()
+                value[col["name"]] = None
+        values.append(value)
+    data_frame = DataFrame(values)
+    return data_frame
 
 
 def init_db(db_config: dict[str, str], force: bool = False) -> None:

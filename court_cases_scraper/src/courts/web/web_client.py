@@ -50,7 +50,7 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         return super().send(request, **kwargs)
 
 
-class WebClient():
+class WebClient:
     """Simple WebClient class (class based on the [requests] module).
         If user_agent specified - use it, if not - generate it randomly.
     """

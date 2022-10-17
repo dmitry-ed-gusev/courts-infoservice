@@ -1,14 +1,19 @@
 """scrap stav mir sud"""
 import time
-import requests
+import random
 from bs4 import BeautifulSoup
 from loguru import logger
+from pandas import DataFrame
+from courts.web.web_client import WebClient
+
+
 from courts.config import scraper_config as config
+from courts.db.db_tools import convert_data_to_df
 
 
-def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:
+def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
-    session = requests.Session()
+    session = WebClient()
     session.headers = {"user-agent": config.USER_AGENT}
     check_date = court.get("check_date").strftime("%Y-%m-%d")
     result = []
@@ -22,12 +27,11 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
             retries = 0
             url = court.get("link") + "/" + case_type + "/?sf5=" + check_date + "&sf5_d=" + check_date + "&pn=" + str(page_num)
             logger.debug(url)
-            while True:
-                time.sleep(2)
+            time.sleep(random.randrange(0, 3))
+            try:
                 page = session.get(url)
-                retries += 1
-                if retries > config.MAX_RETRIES or page.status_code == 200:
-                    break
+            except:
+                return DataFrame(), court, "failure"
             soup = BeautifulSoup(page.content, 'html.parser')
             tables = soup.find_all("table", class_="decision_table")
             # <table class=decision_table>
@@ -99,4 +103,5 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
                         order_num += 1
                         result.append(result_row)
                 page_num += 1
-    return result, court, config.STAGE_MAPPING_7
+    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_7)
+    return data_frame, court, "success"

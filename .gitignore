@@ -138,6 +138,7 @@ output/
 
 # some files that should be ignored
 .DS_Store
+.env*
 
 # concrete CSV files to be ignored
 dm_court_cases.csv

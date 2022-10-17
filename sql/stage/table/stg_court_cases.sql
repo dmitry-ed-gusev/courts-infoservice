@@ -16,5 +16,5 @@ hearing_result varchar(1000),
 decision_link varchar(1000),
 case_link varchar(1000),
 row_hash varchar(100),
-load_dttm datetime
+load_dttm datetime default now()
 );

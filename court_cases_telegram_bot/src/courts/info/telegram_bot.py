@@ -12,6 +12,7 @@
 
 import os
 import pymysql
+from prettytable import PrettyTable
 import logging
 from dotenv import load_dotenv
 from telegram import Update
@@ -24,9 +25,16 @@ logger = logging.getLogger(__name__)
 
 
 def form_message_from_db_response(row) -> str:
-    message = "Суд: " + str(row[0]) + "\nДата заседания: " + row[1].isoformat() + "\nКатегория: " + str(
-        row[2]) + "\nПорядковый номер: " + str(row[3]) + "\nНомер дела: " + str(
-        row[4]) + "\nВремя слушания: " + str(row[5])
+    """dm.court, dm.check_date, dm.section_name, dm.order_num, dm.case_num,
+       dm.hearing_time, dm.hearing_place, dm.case_info, dm.stage, dm.judge, dm.hearing_result,
+       dm.decision_link, dm.case_link, dm.row_hash, dm.court_alias"""
+    message = "Суд: " + str(row[0]) + "\nДата заседания: " + row[1].isoformat() + "\nНомер дела: " + str(row[4])
+    if row[2] and len(row[2]) > 0:
+        message = message + "\nКатегория: " + str(row[2])
+    if row[3]:
+        message = message + "\nПорядковый номер: " + str(row[3])
+    if row[5] and len(row[5]) > 0:
+        message = message + "\nВремя слушания: " + str(row[5])
     if row[6] and len(row[6]) > 0:
         message = message + "\nМесто проведения: " + str(row[6])
     if row[7] and len(row[7]) > 0:
@@ -39,7 +47,8 @@ def form_message_from_db_response(row) -> str:
         message = message + "\nРезультат слушания: " + str(row[10])
     if row[11] and len(row[11]) > 0:
         message = message + "\nСудебный акт: " + str(row[11])
-    message = message + "\nСсылка на дело: " + str(row[12])
+    if row[12] and len(row[12]) > 0:
+        message = message + "\nСсылка на дело: " + str(row[12])
     return message
 
 
@@ -52,7 +61,7 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                            database=os.environ["MYSQL_DB"]
                            )
     cursor = conn.cursor()
-    cursor.execute("""select account_id, case_num, last_notification_dttm 
+    cursor.execute("""select account_id, case_num, court, add_dttm
                     from config_telegram_bot_subscriptions""")
 
     subscriptions = cursor.fetchall()
@@ -61,25 +70,41 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     for subscription in subscriptions:
-        cursor.execute("""select court, check_date, section_name, order_num, case_num, hearing_time, hearing_place,
-                        case_info, stage, judge, hearing_result, decision_link, case_link 
-                        from dm_court_cases
-                        where lower(case_num) like lower(%(case_num)s)
-                        and load_dttm > %(last_check_dttm)s
-                        order by check_date desc
-                        limit %(limit)s""",
-                       {"case_num": str(subscription[1]), "limit": bot_config.OUTPUT_LIMIT,
-                        "last_check_dttm": subscription[2]})
+        cursor.execute("""
+                    select  dm.court, dm.check_date, dm.section_name, dm.order_num, dm.case_num, 
+                            dm.hearing_time, dm.hearing_place, dm.case_info, dm.stage, dm.judge, 
+                            dm.hearing_result, dm.decision_link, dm.case_link, dm.row_hash, dm.court_alias
+                    from dm_court_cases dm
+	                    left join config_telegram_bot_notification_log nlog
+		                    on dm.case_num = nlog.case_num
+		                        and dm.court_alias = nlog.court_alias
+		                        and dm.check_date = nlog.check_date
+		                        and coalesce(dm.order_num, 0) = coalesce(nlog.order_num, 0)
+                    where lower(dm.case_num) = %(case_num)s
+                        and (%(court)s = 'any'
+	                        or dm.court_alias like '%%'|| %(court)s ||'%%'
+	                        or lower(dm.court) like '%%'|| %(court)s ||'%%'
+                        )
+                        and (nlog.row_hash is null or nlog.row_hash <> dm.row_hash)
+                        and dm.load_dttm > %(sub_dttm)s
+                    order by dm.check_date desc
+                    limit %(limit)s
+                    """,
+                       {"case_num": subscription[1], "limit": bot_config.OUTPUT_LIMIT,
+                        "court": subscription[2], "sub_dttm": subscription[3]})
         result_1 = cursor.fetchall()
         if result_1:
             for row in result_1:
                 message = form_message_from_db_response(row)
                 await context.bot.send_message(subscription[0], text=message)
-            cursor.execute("""update config_telegram_bot_subscriptions 
-                            set last_notification_dttm = now()
-                            where account_id = %(account_id)s and case_num = %(case_num)s""",
-                           {"case_num": str(subscription[1]), "account_id": str(subscription[0])})
-            conn.commit()
+                cursor.execute("""insert into config_telegram_bot_notification_log 
+                                (account_id, case_num, check_date, court_alias, order_num, row_hash, send_dttm)
+                                values (%(account_id)s, %(case_num)s, %(check_date)s, 
+                                    %(court_alias)s, %(order_num)s, %(row_hash)s, now())""",
+                               {"account_id": str(subscription[0]), "case_num": str(subscription[1]),
+                                "check_date": row[1], "court_alias": row[14],
+                                "order_num": row[3], "row_hash": row[13]})
+                conn.commit()
     cursor.close()
     conn.close()
 
@@ -87,7 +112,12 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
 async def add_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """adds new subscription"""
     account_id = str(update.message.from_user.id)
-    case_num = " ".join(context.args)
+    input_args = " ".join(context.args)
+    case_num = input_args.split("==")[0].strip().lower()
+    if len(input_args.split("==")) > 1:
+        court = input_args.split("==")[1].strip().lower()
+    else:
+        court = "any"
     conn = pymysql.connect(host=os.environ["MYSQL_HOST"],
                            port=int(os.environ["MYSQL_PORT"]),
                            user=os.environ["MYSQL_USER"],
@@ -95,13 +125,20 @@ async def add_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                            database=os.environ["MYSQL_DB"]
                            )
     cursor = conn.cursor()
-    cursor.execute("""insert into config_telegram_bot_subscriptions (account_id, case_num, last_notification_dttm)
-            select %(account_id)s, lower(%(case_num)s), now() from dual
+    cursor.execute("""insert into config_telegram_bot_subscriptions (account_id, case_num, court)
+            select %(account_id)s, %(case_num)s, %(court)s
+            from dual
             where not exists (select 1 from config_telegram_bot_subscriptions 
-                where account_id = %(account_id)s and lower(case_num) = lower(%(case_num)s) limit 1)""",
-                   {"case_num": case_num, "account_id": account_id})
+                where account_id = %(account_id)s 
+                and lower(case_num) = %(case_num)s
+                and lower(court) = %(court)s
+                limit 1)""",
+                   {"case_num": case_num, "account_id": account_id, "court": court})
     conn.commit()
-    await update.effective_message.reply_text(f"Добавлена подписка на дело {case_num}")
+    if court == "any":
+        await update.effective_message.reply_text(f"Добавлена подписка на дело {case_num}")
+    else:
+        await update.effective_message.reply_text(f"Добавлена подписка на дело {case_num} в суде {court}")
     cursor.close()
     conn.close()
 
@@ -109,7 +146,12 @@ async def add_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def remove_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """removes subscription"""
     account_id = str(update.message.from_user.id)
-    case_num = " ".join(context.args)
+    input_args = " ".join(context.args)
+    case_num = input_args.split("==")[0].strip().lower()
+    if len(input_args.split("==")) > 1:
+        court = input_args.split("==")[1].strip().lower()
+    else:
+        court = "any"
     conn = pymysql.connect(host=os.environ["MYSQL_HOST"],
                            port=int(os.environ["MYSQL_PORT"]),
                            user=os.environ["MYSQL_USER"],
@@ -125,8 +167,13 @@ async def remove_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.effective_message.reply_text(f"Все подписки удалены. Вы больше не будете получать уведомлений.")
     else:
         cursor.execute("""delete from config_telegram_bot_subscriptions 
-                    where account_id = %(account_id)s and lower(case_num) = lower(%(case_num)s)""",
-                       {"case_num": case_num, "account_id": account_id})
+                    where account_id = %(account_id)s 
+                    and lower(case_num) = lower(%(case_num)s)
+                    and (%(court)s = 'any'
+                        or court = %(court)s
+                        )
+                    """,
+                       {"case_num": case_num, "account_id": account_id, "court": court})
         conn.commit()
         await update.effective_message.reply_text(f"Удалена подписка на дело {case_num}")
     cursor.close()
@@ -159,6 +206,38 @@ async def get_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     conn.close()
 
 
+async def get_full_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """shows active subs"""
+    conn = pymysql.connect(host=os.environ["MYSQL_HOST"],
+                           port=int(os.environ["MYSQL_PORT"]),
+                           user=os.environ["MYSQL_USER"],
+                           passwd=os.environ["MYSQL_PASS"],
+                           database=os.environ["MYSQL_DB"]
+                           )
+    cursor = conn.cursor()
+    cursor.execute("select title, total_rows, min_dt, max_dt from dm_v_court_stats")
+
+    result = cursor.fetchall()
+
+    table = PrettyTable(["Суд", "Всего записей", "Слушания с", "Слушания по"])
+    table.align["Суд"] = 'l'
+    table.align["Всего записей"] = 'r'
+    table.align["Слушания с"] = 'r'
+    table.align["Слушания по"] = 'r'
+
+    for row in result:
+        table.add_row([row[0], row[1], row[2], row[3]])
+        if len(str(table)) > 5000:
+            message = f"```{table}```"
+            await update.effective_message.reply_text(message, parse_mode="markdown")
+            table.clear_rows()
+
+    message = f"```{str(table)}```"
+    await update.effective_message.reply_text(message, parse_mode="markdown")
+    cursor.close()
+    conn.close()
+
+
 async def show_subscriptions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """shows active subs"""
     account_id = str(update.message.from_user.id)
@@ -169,7 +248,7 @@ async def show_subscriptions(update: Update, context: ContextTypes.DEFAULT_TYPE)
                            database=os.environ["MYSQL_DB"]
                            )
     cursor = conn.cursor()
-    cursor.execute("""select case_num from config_telegram_bot_subscriptions 
+    cursor.execute("""select case_num, court from config_telegram_bot_subscriptions 
                 where account_id = %(account_id)s""",
                    {"account_id": account_id})
 
@@ -179,10 +258,12 @@ async def show_subscriptions(update: Update, context: ContextTypes.DEFAULT_TYPE)
         message = "Подписок нет."
         await update.effective_message.reply_text(message)
         return
-    message = "Вы подписаны на:\n"
+    message = "Вы подписаны на:"
     for row in result:
-        message = message + str(row[0]) + "\n"
-    message.rstrip("\n")
+        if row[1] == "any":
+            message = message + "\nДело номер " + row[0]
+        else:
+            message = message + "\nДело номер " + row[0] + ", суд: " + row[1]
     await update.effective_message.reply_text(message)
     cursor.close()
     conn.close()
@@ -245,11 +326,13 @@ def main() -> None:
 
     # debug output for loaded variables
     logger.info(f"Loaded environment variables:\n"
-                f"API_TOKEN={'OK' if os.environ['API_TOKEN'] else '!!!'}\n"  # will raise KeyError if no token
+                # will raise KeyError if no token
+                f"API_TOKEN={'OK' if os.environ['API_TOKEN'] else 'No API Token provided!'}\n"
                 f"MYSQL_HOST={os.getenv('MYSQL_HOST', 'Value Doesnt Exist!')}\n"
                 f"MYSQL_PORT={os.getenv('MYSQL_PORT', 'Value Doesnt Exist!')}\n"
                 f"MYSQL_USER={os.getenv('MYSQL_USER', 'Value Doesnt Exist!')}\n"
-                f"MYSQL_PASS={os.getenv('MYSQL_PASS', 'Value Doesnt Exist!')}\n"
+                # will raise KeyError if no password
+                f"MYSQL_PASS={'OK' if os.environ['MYSQL_PASS'] else 'No MySql Password provided!'}\n"
                 f"MYSQL_DB={os.getenv('MYSQL_DB', 'Value Doesnt Exist!')}\n")
 
     # Create the Application and pass it your bot's token.

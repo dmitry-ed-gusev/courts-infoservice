@@ -1,35 +1,42 @@
 """scrap js page of krasnodarskiy kraevoy sud"""
-
+import time
 import random
-from fake_useragent import UserAgent
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from bs4 import BeautifulSoup
 from loguru import logger
+from pandas import DataFrame
+
 from courts.config import scraper_config as config
+from court_cases_scraper.src.courts.config import selenium_config
+from courts.db.db_tools import convert_data_to_df
 
 
-def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, str]]]:
+def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output js page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     result = []
-    user_agent = UserAgent()
-    options = webdriver.FirefoxOptions()
-    options.add_argument("--headless")
-    options.add_argument("--incognito")
-    options.add_argument(
-        "--window-size=" + str(1920 + random.randrange(-200, 200)) + "," + str(1024 + random.randrange(-200, 200)))
-    options.add_argument("--disable-gpu")
-    options.add_argument("--nogpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--enable-javascript")
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument("--user-agent=" + user_agent.random)
-    driver = webdriver.Chrome(service=Service(GeckoDriverManager().install()), options=options)
+    while True:
+        try:
+            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+                                       options=selenium_config.firefox_options)
+            break
+        except:
+            time.sleep(3)
     url = court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date
     logger.debug(url)
-    driver.get(url)
+    retries = 0
+    while True:
+        time.sleep(random.randrange(0, 3))
+        retries += 1
+        if retries > 4:
+            return DataFrame(), court, "failure"
+        try:
+            driver.get(url)
+            break
+        except:
+            None
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
     tables = soup.find_all("div", id="resultTable")
@@ -62,4 +69,5 @@ def parse_page(court: dict) -> tuple[list[dict[str, str]], dict, list[dict[str, 
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
     driver.close()
-    return result, court, config.STAGE_MAPPING_3
+    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_3)
+    return data_frame, court, "success"
