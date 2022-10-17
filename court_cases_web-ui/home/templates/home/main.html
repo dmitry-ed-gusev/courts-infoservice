@@ -1,0 +1,31 @@
+{% extends "base_bootstrap.html" %}
+{% block content %}
+    <h1>Welcome to {{ settings.APP_NAME }}</h1>
+    <p>Hello world.</p>
+
+    <h3>Registered Sample Applications</h3>
+    <ul>
+        <li><p><a href="/polls">A Polls Application</a></p></li>
+        <li><p><a href="/hello">Test the session</a></p></li>
+        <li><p><a href="/ships">Ships CRUD</a></p></li>
+        <li><p><a href="/autos">Auto CRUD Application (dj4e - week #3)</a></p></li>
+        <li><p><a href="/cats">Cats CRUD Application (dj4e - week #4)</a></p></li>
+        <li><p><a href="/ads">ADS Application (dj4e - week #5)</a></p></li>
+        </ul>
+
+    {% if user.is_authenticated %}
+    <p>Authenticated as
+    <pre>
+    Name: {{ user.get_full_name }}
+    Email: {{ user.email }}
+    Id: {{ user.id }}
+    <!-- https://stackoverflow.com/questions/26879011/check-if-current-user-is-logged-in-using-any-django-social-auth-provider -->
+    Type: {% if backends.associated %} GitHub {% else %} Local {% endif %}
+    </pre>
+    </p>
+    <p>You can <a href="/accounts/logout">Logout</a></p>
+    {% else %}
+    <p>You can <a href="/accounts/login">Login</a> if you like.</p>
+    {% endif %}
+
+{% endblock content %}

@@ -10,6 +10,7 @@
     Modified: Dmitrii Gusev, 17.10.2022
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -142,14 +143,15 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.1/topics/i18n/
+# Internationalization: https://docs.djangoproject.com/en/4.1/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "EET"  # "UTC" <- default setting, EET - same as MSK -> GMT+3
 
 USE_I18N = True
+
+USE_L10N = True  # newly added
 
 USE_TZ = True
 
@@ -159,7 +161,160 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    )
+}
+
+# todo: social login implementation
+# # Configure the social login
+# try:
+#     from . import github_settings
+#     SOCIAL_AUTH_GITHUB_KEY = github_settings.SOCIAL_AUTH_GITHUB_KEY
+#     SOCIAL_AUTH_GITHUB_SECRET = github_settings.SOCIAL_AUTH_GITHUB_SECRET
+# except:
+#     print('When you want to use social login, please see dj4e-samples/github_settings-dist.py')
+
+# https://python-social-auth.readthedocs.io/en/latest/configuration/django.html#authentication-backends
+# https://simpleisbetterthancomplex.com/tutorial/2016/10/24/how-to-add-social-login-to-django.html
+# AUTHENTICATION_BACKENDS = (
+#     'social_core.backends.github.GithubOAuth2',
+#     # 'social_core.backends.twitter.TwitterOAuth',
+#     # 'social_core.backends.facebook.FacebookOAuth2',
+
+#     'django.contrib.auth.backends.ModelBackend',
+# )
+
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/'
+
+# Don't set default LOGIN_URL - let django.contrib.auth set it when it is loaded
+# LOGIN_URL = '/accounts/login'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# logging configuration for django, see more:
+#   - https://docs.djangoproject.com/en/4.0/topics/logging/
+#   - https://docs.djangoproject.com/en/4.0/ref/logging/#default-logging-configuration
+#   - https://docs.djangoproject.com/en/4.0/howto/logging/#logging-how-to
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {  # logging formatters
+
+        "standard": {  # standard log format
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        },
+
+        "simple": {  # usually used log format
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
+
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+
+    },  # end of formatters block
+
+    "handlers": {  # logging handlers
+
+        "default": {  # default handler (for emergency cases)
+            "level": "DEBUG",
+            "formatter": "standard",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",  # Default is stderr
+        },
+
+        "console": {  # usual console handler
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",
+        },
+
+        "std_file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "filename": str(BASE_DIR) + "/log_info.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 20,
+            "encoding": "UTF-8",
+        },
+
+        "error_file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "ERROR",
+            "formatter": "simple",
+            "filename": str(BASE_DIR) + "/log_errors.log",
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 20,
+            "encoding": "UTF-8",
+        },
+
+    },  # end of handlers block
+
+    "loggers": {  # defining logger block
+
+        'django': {  # dedicated django logger - log only to console
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+
+        'parso': {  # django shell parser/autocomplete, it worth to have it upper DEBUG
+            'level': 'INFO',  # todo: set to WARN?
+        },
+
+        "rallytool": {  # todo: logger for some library used
+            # 'handlers': ['default'],
+            "level": "DEBUG",
+            # 'propagate': False
+        },
+
+        "__main__": {  # if __name__ == '__main__' - emergency case!!!
+            "handlers": ["default"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+
+    },  # end of loggers module
+
+    "root": {  # root logger
+        "level": "DEBUG",  # todo: should be WARNING for PROD?
+        "handlers": ["console", "std_file_handler", "error_file_handler"],
+    },
+
+}  # end of LOGGING block
+
+# https://coderwall.com/p/uzhyca/quickly-setup-sql-query-logging-django
+# https://stackoverflow.com/questions/12027545/determine-if-django-is-running-under-the-development-server
+
+'''  # Leave off for now
+import sys
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+    print('Running locally')
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+            }
+        },
+        'loggers': {
+            'django.db.backends': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+            },
+        }
+    }
+'''
