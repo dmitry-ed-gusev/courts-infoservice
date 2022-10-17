@@ -326,11 +326,13 @@ def main() -> None:
 
     # debug output for loaded variables
     logger.info(f"Loaded environment variables:\n"
-                f"API_TOKEN={'OK' if os.environ['API_TOKEN'] else '!!!'}\n"  # will raise KeyError if no token
+                # will raise KeyError if no token
+                f"API_TOKEN={'OK' if os.environ['API_TOKEN'] else 'No API Token provided!'}\n"
                 f"MYSQL_HOST={os.getenv('MYSQL_HOST', 'Value Doesnt Exist!')}\n"
                 f"MYSQL_PORT={os.getenv('MYSQL_PORT', 'Value Doesnt Exist!')}\n"
                 f"MYSQL_USER={os.getenv('MYSQL_USER', 'Value Doesnt Exist!')}\n"
-                f"MYSQL_PASS={os.getenv('MYSQL_PASS', 'Value Doesnt Exist!')}\n"
+                # will raise KeyError if no password
+                f"MYSQL_PASS={'OK' if os.environ['MYSQL_PASS'] else 'No MySql Password provided!'}\n"
                 f"MYSQL_DB={os.getenv('MYSQL_DB', 'Value Doesnt Exist!')}\n")
 
     # Create the Application and pass it your bot's token.
