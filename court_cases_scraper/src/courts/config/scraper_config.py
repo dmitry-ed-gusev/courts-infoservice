@@ -69,33 +69,6 @@ class Config():
         return "Config: " + json.dumps(asdict(self), indent=4)
 
 
-@singleton
-class CookiesArbitrary:
-    """class to preserve current cookie between worker sessions"""
-    __cookies: str = ""
-    __user_agent: str = ""
-
-    @property
-    @threadsafe_function
-    def cookies(self) -> str:
-        return self.__cookies
-
-    @cookies.setter
-    @threadsafe_function
-    def cookies(self, value: str):
-        self.__cookies = value
-
-    @property
-    @threadsafe_function
-    def user_agent(self) -> str:
-        return self.__user_agent
-
-    @cookies.setter
-    @threadsafe_function
-    def user_agent(self, value: str):
-        self.__user_agent = value
-
-
 MAX_RETRIES = 20
 RANGE_BACKWARD = 14
 RANGE_FORWARD = 45
@@ -103,7 +76,7 @@ WORKERS_COUNT_1 = 4
 WORKERS_COUNT_2 = 5
 WORKERS_COUNT_3 = 1
 WORKERS_COUNT_4 = 3
-WORKERS_COUNT_5 = 5
+WORKERS_COUNT_5 = 6
 WORKERS_COUNT_6 = 3
 WORKERS_COUNT_7 = 2
 WORKERS_COUNT_8 = 1

@@ -12,6 +12,7 @@
 
 import os
 import pymysql
+from prettytable import PrettyTable
 import logging
 from dotenv import load_dotenv
 from telegram import Update
@@ -52,7 +53,7 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                            database=os.environ["MYSQL_DB"]
                            )
     cursor = conn.cursor()
-    cursor.execute("""select account_id, case_num, last_notification_dttm 
+    cursor.execute("""select account_id, case_num, court, last_notification_dttm 
                     from config_telegram_bot_subscriptions""")
 
     subscriptions = cursor.fetchall()
@@ -155,6 +156,34 @@ async def get_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             3] + ".\nВсего записей: " + str(row[0]) + "."
 
     await update.effective_message.reply_text(message)
+    cursor.close()
+    conn.close()
+
+
+async def get_full_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """shows active subs"""
+    conn = pymysql.connect(host=os.environ["MYSQL_HOST"],
+                           port=int(os.environ["MYSQL_PORT"]),
+                           user=os.environ["MYSQL_USER"],
+                           passwd=os.environ["MYSQL_PASS"],
+                           database=os.environ["MYSQL_DB"]
+                           )
+    cursor = conn.cursor()
+    cursor.execute("select title, total_rows, min_dt, max_dt from dm_v_court_stats")
+
+    result = cursor.fetchall()
+
+    table = PrettyTable(["Суд", "Всего записей", "Слушания с", "Слушания по"])
+    table.align["Суд"] = 'l'
+    table.align["Всего записей"] = 'r'
+    table.align["Слушания с"] = 'r'
+    table.align["Слушания по"] = 'r'
+
+    for row in result:
+        table.add_row([row[0], row[1], row[2], row[3]])
+
+    message = f"```{table}```"
+    await update.effective_message.reply_text(message, parse_mode="markdown")
     cursor.close()
     conn.close()
 
@@ -262,6 +291,7 @@ def main() -> None:
     application.add_handler(CommandHandler("subscribe", add_subscription))
     application.add_handler(CommandHandler("unsubscribe", remove_subscription))
     application.add_handler(CommandHandler("status", get_status))
+    application.add_handler(CommandHandler("full-stats", get_full_stats))
 
     # schedule notification job
     application.job_queue.run_repeating(check_subscriptions, interval=bot_config.JOB_SCHEDULE_INTERVAL)

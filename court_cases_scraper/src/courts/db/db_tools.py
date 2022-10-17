@@ -97,7 +97,6 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
             select link, title, alias, server_num, parser_type, check_date
             from config_v_courts_to_refresh
             where check_date between %(start_date)s and %(end_date)s
-            and parser_type not in('8')
             order by check_date
             """, {"start_date": datetime.now() - timedelta(days=config.RANGE_BACKWARD),
                   "end_date": datetime.now() + timedelta(days=config.RANGE_FORWARD)})

@@ -114,7 +114,7 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
     for task in as_completed(futures):
         running, done, total = thread_count(futures)
         logger.info(
-            f"{running} running. {done} completed. {loaded} loaded. Total {total}. " + str(round((total - done)/total*100,2)) + "%")
+            f"{running} running. {done} completed. {loaded} loaded. Total {total}. " + str(round(done/total*100, 2)) + "%")
         result_part, court_config, status = task.result()
         result_len = len(result_part)
         if result_len > 0:
@@ -148,7 +148,7 @@ def main() -> None:
                  "db": os.environ["MYSQL_DB"]
                  }
     courts_config = db_tools.read_courts_config(db_config)
-    db_tools.clean_stage_table()
+    db_tools.clean_stage_table(db_config)
     scrap_courts(courts_config, db_config)
     # scrap_courts_no_parallel(courts_config, db_config)
 
