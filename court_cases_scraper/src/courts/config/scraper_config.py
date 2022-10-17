@@ -21,22 +21,6 @@ from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
 CACHE_DIR_NAME: str = ".courts_scraper"  # cache dir name
 
 
-def threadsafe_function(fn):
-    """Decorator making sure that the decorated function is thread safe."""
-    lock = threading.Lock()
-
-    def new(*args, **kwargs):
-        lock.acquire()
-        try:
-            r = fn(*args, **kwargs)
-        # except Exception as e:
-        #     raise e
-        finally:
-            lock.release()
-        return r
-
-    return new
-
 # if cache is in curr dir (exists and is dir) - use it, otherwise - use the user
 # home directory (mostly suitable for development, in most cases user home dir will be used)
 def get_cache_dir(base_name: str) -> str:

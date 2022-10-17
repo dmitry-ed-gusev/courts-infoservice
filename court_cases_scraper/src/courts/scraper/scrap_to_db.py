@@ -13,6 +13,7 @@ from courts.config import scraper_config as config
 from courts.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5, parser_6,
                             parser_7, parser_8)
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
+from courts.utils.utilities import threadsafe_function
 
 logger.remove()
 # setup for multithreading processing
@@ -23,7 +24,6 @@ def thread_count(futures: list[Future]) -> tuple[int, int, int]:
     """count running threads"""
     running = 0
     done = 0
-    cancelled = 0
     for future in futures:
         if future.running():
             running += 1
@@ -73,7 +73,7 @@ def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_
         db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"], status)
 
 
-@config.threadsafe_function
+@threadsafe_function
 def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
     """router with parallel execution"""
     futures = []  # list to store future results of threads

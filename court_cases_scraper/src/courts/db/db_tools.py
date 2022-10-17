@@ -3,11 +3,10 @@ from pathlib import Path
 import pymysql
 from loguru import logger
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, event, text as sa_text
+from sqlalchemy import create_engine, text as sa_text
 from pandas import DataFrame
 
-from court_cases_scraper.src.courts.config import scraper_config as config
-from court_cases_scraper.src.courts.config import db_init_config
+from court_cases_scraper.src.courts.config import scraper_config, db_init_config
 
 
 def clean_stage_table(db_config: dict[str, str]):
@@ -21,7 +20,7 @@ def clean_stage_table(db_config: dict[str, str]):
                            )
 
     cursor = conn.cursor()
-    sql = "delete from " + config.STAGE_TABLE
+    sql = "delete from " + scraper_config.STAGE_TABLE
     cursor.execute(sql)
     conn.commit()
     conn.close()
@@ -98,8 +97,8 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
             from config_v_courts_to_refresh
             where check_date between %(start_date)s and %(end_date)s
             order by check_date
-            """, {"start_date": datetime.now() - timedelta(days=config.RANGE_BACKWARD),
-                  "end_date": datetime.now() + timedelta(days=config.RANGE_FORWARD)})
+            """, {"start_date": datetime.now() - timedelta(days=scraper_config.RANGE_BACKWARD),
+                  "end_date": datetime.now() + timedelta(days=scraper_config.RANGE_FORWARD)})
     result_1 = cursor.fetchall()
     if result_1:
         for row1 in result_1:
@@ -116,53 +115,6 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     return result
 
 
-def load_to_stage(data: list[dict[str, str]], stage_mapping: list[dict[str, str]], db_config: dict[str, str],
-                  court_alias: str, check_date: datetime) -> None:
-    """loads parsed data to stage"""
-    if len(data) == 0:
-        return
-
-    conn = pymysql.connect(host=db_config.get("host"),
-                           port=int(db_config.get("port")),
-                           user=db_config.get("user"),
-                           passwd=db_config.get("passwd"),
-                           database=db_config.get("db"),
-                           )
-
-    logger.debug("Connected")
-    cursor = conn.cursor()
-
-    sql_part1 = f"INSERT INTO {config.STAGE_TABLE} ("
-    sql_part2 = ""
-
-    for field in stage_mapping:
-        sql_part1 = sql_part1 + field.get("name") + ", "
-        if field.get("constant"):
-            sql_part2 = sql_part2 + field.get("constant") + ", "
-        else:
-            sql_part2 = sql_part2 + "%s, "
-
-    sql_statement = sql_part1.rstrip(", ") + ") VALUES (" + sql_part2.rstrip(", ") + ")"
-
-    # logger.debug(sql_statement)
-    values = []
-    logger.debug("Stage data load start")
-    for idx_r, row in enumerate(data):
-        value = []
-        for idx_c, col in enumerate(stage_mapping):
-            if row.get(col.get("mapping")):
-                value.append(row.get(col.get("mapping")))
-            elif col.get("mapping"):
-                value.append(None)
-        values.append(value)
-    cursor.executemany(sql_statement, values)
-    conn.commit()
-    cursor.callproc("stage_p_update_court_cases_row_hash")
-    conn.commit()
-    logger.debug("Stage data load completed. Loaded " + str(len(data)) + " rows.")
-    conn.close()
-
-
 def load_to_stage_alchemy(data_frame: DataFrame, db_config: dict[str, str]) -> None:
     """loads parsed data to stage"""
     if len(data_frame) == 0:
@@ -175,7 +127,7 @@ def load_to_stage_alchemy(data_frame: DataFrame, db_config: dict[str, str]) -> N
                            + "/" + db_config.get("db")
                            + "?charset=utf8&local_infile=1")
     logger.debug("Loading to stage")
-    data_frame.to_sql(config.STAGE_TABLE, engine, index=False, if_exists="append")
+    data_frame.to_sql(scraper_config.STAGE_TABLE, engine, index=False, if_exists="append")
 
     connection = engine.connect()
     connection.execute(sa_text("call stage_p_update_court_cases_row_hash()"))

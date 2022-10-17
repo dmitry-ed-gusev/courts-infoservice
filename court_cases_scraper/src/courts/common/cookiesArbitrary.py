@@ -2,8 +2,7 @@ import random
 import time
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
-from courts.utils.utilities import singleton
-from courts.config.scraper_config import threadsafe_function
+from courts.utils.utilities import singleton, threadsafe_function
 from selenium import webdriver
 
 
