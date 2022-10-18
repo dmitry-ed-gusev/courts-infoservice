@@ -1,36 +1,54 @@
+<!-- Navigation Bar at the top of the page -->
+<!-- this template extends the base_bootstrap.html - it fits into the <navbar> block -->
+<!-- see more here: https://getbootstrap.com/docs/3.3/components/#navbar-default -->
+
 {% extends "base_bootstrap.html" %}
+
 {% block navbar %}
-{% load app_tags %}
-<nav class="navbar navbar-default navbar-inverse">
-  <div class="container-fluid">
-    <div class="navbar-header">
-        <a class="navbar-brand" href="/">{{ settings.APP_NAME }}</a>
+
+    {% load app_tags %}
+
+    <nav class="navbar navbar-default navbar-inverse">
+    <div class="container-fluid">
+
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">{{ settings.APP_NAME }}</a>
+        </div>
+
+        <!-- https://stackoverflow.com/questions/22047251/django-dynamically-get-view-url-and-check-if-its-the-current-page -->
+        <ul class="nav navbar-nav">
+            {% comment %} {% url 'courts' as courts %} {% endcomment %}
+            <li {% if request.get_full_path == courts %}class="active"{% endif %}>
+                <a href="{% url 'courts:main' %}">Суды</a></li>
+
+            <li {% if request.get_full_path == stats %}class="active"{% endif %}>
+                <a href="{% url 'stats:main' %}">Статистика</a></li>
+        </ul>
+
+        <ul class="nav navbar-nav navbar-right">
+            {% if user.is_authenticated %}
+                <p class="navbar-text">
+                    Пользователь: {{ user.get_full_name }}
+                     (ID = {{ user.id }})
+                </p>
+
+                <li class="dropdown">
+                    <a href="#" data-toggle="dropdown" class="dropdown-toggle">
+                        <img style="width: 25px;" src="{{ user|gravatar:60 }}"/><b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'logout' %}?next={% url 'home:main' %}">Logout</a></li>
+                    </ul>
+                </li>
+
+            {% else %}
+                <li>
+                    <a href="{% url 'login' %}?next={% url 'home:main' %}">Login</a>
+                </li>
+            {% endif %}
+        </ul>
+
     </div>
-    <!-- https://stackoverflow.com/questions/22047251/django-dynamically-get-view-url-and-check-if-its-the-current-page -->
-    <ul class="nav navbar-nav">
-      {% url 'ads' as ads %}
-      <li {% if request.get_full_path == ads %}class="active"{% endif %}>
-          <a href="{% url 'ads:all' %}">Ads</a></li>
-    </ul>
-    <ul class="nav navbar-nav navbar-right">
-        {% if user.is_authenticated %}
-        <li>
-        <a href="{% url 'ads:ad_create' %}">Create Ad</a>
-        </li>
-        <li class="dropdown">
-            <a href="#" data-toggle="dropdown" class="dropdown-toggle">
-                <img style="width: 25px;" src="{{ user|gravatar:60 }}"/><b class="caret"></b>
-            </a>
-            <ul class="dropdown-menu">
-                <li><a href="{% url 'logout' %}?next={% url 'ads:all' %}">Logout</a></li>
-            </ul>
-        </li>
-        {% else %}
-        <li>
-        <a href="{% url 'login' %}?next={% url 'ads:all' %}">Login</a>
-        </li>
-        {% endif %}
-    </ul>
-  </div>
-</nav>
-{% endblock %}
+    </nav>
+
+{% endblock %} <!-- end <navbar> block -->

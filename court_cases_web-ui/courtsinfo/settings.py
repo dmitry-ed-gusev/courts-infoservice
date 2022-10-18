@@ -18,6 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Used for a default title
+APP_TITLE = 'Все суды РФ'
 APP_NAME = 'Информация о судебных делах РФ'
 
 # Quick-start development settings - unsuitable for production
@@ -145,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization: https://docs.djangoproject.com/en/4.1/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"  # "en-us" <- original encoding
 
 TIME_ZONE = "EET"  # "UTC" <- default setting, EET - same as MSK -> GMT+3
 
