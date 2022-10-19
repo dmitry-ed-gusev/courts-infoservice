@@ -37,8 +37,8 @@ urlpatterns = [
     # processing the static content
     re_path(r'^site/(?P<path>.*)$', serve,
             {'document_root': SITE_ROOT, 'show_indexes': True},
-            name='site_path'
-            ),  # serve static content by address /site
+            name='site_path'),  # serve static content by address /site
+
     re_path(r'^oauth/', include('social_django.urls', namespace='social')),
 
     # site applications
