@@ -6,15 +6,14 @@ from loguru import logger
 from pandas import DataFrame
 from courts.web.web_client import WebClient
 
-
-from courts.config import scraper_config as config
+from courts.config import scraper_config
 from courts.db.db_tools import convert_data_to_df
 
 
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
     session = WebClient()
-    session.headers = {"user-agent": config.USER_AGENT}
+    session.headers = {"user-agent": scraper_config.USER_AGENT}
     check_date = court.get("check_date").strftime("%Y-%m-%d")
     result = []
     case_types = ["caselistus", "caselistcs", "caselistas"]
@@ -24,7 +23,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         order_num = 1
         while not empty_flag:
             empty_flag = True
-            retries = 0
             url = court.get("link") + "/" + case_type + "/?sf5=" + check_date + "&sf5_d=" + check_date + "&pn=" + str(page_num)
             logger.debug(url)
             time.sleep(random.randrange(0, 3))
@@ -103,5 +101,5 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                         order_num += 1
                         result.append(result_row)
                 page_num += 1
-    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_7)
+    data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[7]["stage_mapping"])
     return data_frame, court, "success"

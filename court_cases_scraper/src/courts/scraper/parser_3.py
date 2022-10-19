@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config as config
+from courts.config import scraper_config
 from court_cases_scraper.src.courts.config import selenium_config
 from courts.db.db_tools import convert_data_to_df
 
@@ -34,10 +34,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             return DataFrame(), court, "failure"
         try:
             driver.get(url)
+            html = driver.page_source
             break
         except:
             None
-    html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
     tables = soup.find_all("div", id="resultTable")
     # <div id="resultTable">
@@ -68,6 +68,9 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 result_row["court"] = court.get("title")
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
-    driver.close()
-    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_3)
+    try:
+        driver.close()
+    except:
+        None
+    data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[3]["stage_mapping"])
     return data_frame, court, "success"

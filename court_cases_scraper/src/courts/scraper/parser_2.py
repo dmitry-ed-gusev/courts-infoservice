@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config as config
+from courts.config import scraper_config
 from courts.db.db_tools import convert_data_to_df
 from courts.web.web_client import WebClient
 
@@ -15,7 +15,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses mos gor sud page with paging"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = WebClient()
-    session.headers = {"user-agent": config.USER_AGENT}
+    session.headers = {"user-agent": scraper_config.USER_AGENT}
     result = []
     page_num = 1
     pages_total = 1
@@ -68,7 +68,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             page_num += 1
         else:
             break
-    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_2)
+    data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[2]["stage_mapping"])
     return data_frame, court, "success"
 
 
