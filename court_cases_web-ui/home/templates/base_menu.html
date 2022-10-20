@@ -19,7 +19,7 @@
         <ul class="nav navbar-nav">
             {% comment %} {% url 'courts' as courts %} {% endcomment %}
             <li {% if request.get_full_path == courts %}class="active"{% endif %}>
-                <a href="{% url 'courts:main' %}">Суды</a></li>
+                <a href="{% url 'courts:main' %}">Судебные дела</a></li>
 
             <li {% if request.get_full_path == stats %}class="active"{% endif %}>
                 <a href="{% url 'stats:main' %}">Статистика</a></li>

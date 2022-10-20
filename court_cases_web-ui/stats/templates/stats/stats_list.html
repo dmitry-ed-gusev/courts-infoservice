@@ -15,11 +15,11 @@
 
 {% if object_list %}
 
-  <table id="stats_list_table" class="table">
+  <table class="table table-striped table-condensed table-hover table-bordered">
     <caption>
       Ниже представлена таблица со статистической информацией - какие 
       данные существуют в системе.<br>
-      Всего данных: {{ size }} строк.
+      Всего данных: {{ size }} строк. Строк на странице: {{ page_size }}.
     </caption>
 
     <thead> <!-- header row -->

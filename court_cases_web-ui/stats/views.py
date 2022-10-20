@@ -12,6 +12,8 @@ from stats.models import DmVCourtStats
 
 log = logging.getLogger(__name__)
 
+PAGE_SIZE: int = 25
+
 
 def index(request):  # sample simple view
     return HttpResponse("Здесь будет статистическая информация!")
@@ -26,7 +28,7 @@ class StatsListView(LoginRequiredMixin, ListView):
     # paginate_by: int = 25
 
     def get(self, request):
-        log.debug("Statistics View is working.")
+        log.debug("StatsListView.get() is working.")
 
         strval = request.GET.get("search", False)
         log.debug(f"Search string: [{strval}].")
@@ -38,7 +40,7 @@ class StatsListView(LoginRequiredMixin, ListView):
             #                     .select_related().order_by('-updated_at')[:10]
 
             # Multi-field search (several fields)
-            # __icontains for case-insensitive search
+            # __icontains -> for case-insensitive search
             query = Q(court_alias__icontains=strval)
             query.add(Q(title__icontains=strval), Q.OR)
             object_list = DmVCourtStats.objects.filter(query).select_related().distinct()
@@ -49,7 +51,7 @@ class StatsListView(LoginRequiredMixin, ListView):
         objects_list_size = len(object_list)
 
         # when we've created object_list (found all data) - add pagination to it
-        paginator = Paginator(object_list, 25)  # use Paginator and show XX items per page
+        paginator = Paginator(object_list, PAGE_SIZE)  # use Paginator and show XX items per page
         page_number = request.GET.get('page', 1)  # current page number
         page_obj = paginator.get_page(page_number)  # get the current Page from Paginator
         # todo: Paginator: method get_page() is better (reliable) rather than page() - raises issues...
@@ -57,7 +59,7 @@ class StatsListView(LoginRequiredMixin, ListView):
         object_list = page_obj
 
         # creating the context for the page: list of ADs (limited by search), favorites, search string
-        ctx = {'object_list': object_list, 'size': objects_list_size,
+        ctx = {'object_list': object_list, 'size': objects_list_size, 'page_size': PAGE_SIZE,
                'search': strval, 'page_obj': page_obj}
 
         return render(request, self.template_name, ctx)

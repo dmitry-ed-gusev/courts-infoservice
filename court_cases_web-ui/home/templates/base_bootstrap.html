@@ -1,4 +1,4 @@
-<!-- base page template (with bootstrap) -->
+<!-- base page template (with bootstrap 3.x) -->
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -42,7 +42,13 @@
 
 <body>
     <!-- generated block: page top (page header) -->
-    <div class="container">
+
+    <!-- 
+        page container: 
+            - use .container for a responsive fixed width container
+            - use .container-fluid for a full width container, spanning the entire width of viewport
+    -->
+    <div class="container-fluid">
 
         {% block navbar %} {% endblock %} <!-- page navigation bar component -->
 
