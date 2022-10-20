@@ -4,7 +4,7 @@ import random
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config as config
+from courts.config import scraper_config
 from courts.db.db_tools import convert_data_to_df
 from courts.web.web_client import WebClient
 
@@ -21,8 +21,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         while True:
             content_json = None
             time.sleep(random.randrange(0, 3))
-            api_search = court.get("link") + \
-                         "/cases/api/search/?adm_person_type=all&article=&civil_person_type=" + \
+            api_search = court.get("link") + "/cases/api/search/?adm_person_type=all&article=&civil_person_type=" + \
                          "all&court_number=&criminal_person_type=all&date_from=" + check_date + \
                          "&date_to=" + check_date + "&full_name=&id=&page=" + str(page_num) + "&type=" + case_type
             get_search = session.get(api_search)
@@ -38,7 +37,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     finished = content_json["finished"]
                 if not finished:
                     time.sleep(3)
-                if total_tries > config.MAX_RETRIES:
+                if total_tries > scraper_config.MAX_RETRIES:
                     return DataFrame(), court, "failure"
 
             for row in content_json["result"]["data"]:
@@ -87,5 +86,5 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             else:
                 page_num += 1
 
-    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_4)
+    data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[4]["stage_mapping"])
     return data_frame, court, "success"

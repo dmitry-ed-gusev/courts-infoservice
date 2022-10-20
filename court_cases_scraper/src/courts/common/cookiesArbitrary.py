@@ -1,5 +1,6 @@
 import random
 import time
+from loguru import logger
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from courts.utils.utilities import singleton, threadsafe_function
@@ -45,7 +46,7 @@ class CookiesArbitrary:
     @threadsafe_function
     def headers(self) -> dict[str, str]:
         self.__uses += 1
-        if not self.__headers or self.__uses > 100:
+        if not self.__headers or self.__uses > 50:
             self.refresh_cookies()
             self.__uses = 0
         return self.__headers
@@ -70,26 +71,39 @@ class CookiesArbitrary:
                        ]
 
         self.__user_agent = user_agents[random.randrange(0, len(user_agents))]
+
+        accept_languages = ["ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
+                            "en-US,en;q=0.9",
+                            "en-US,fr-CA",
+                            ]
+        accept_language = accept_languages[random.randrange(0, len(accept_languages))]
+
         resolutions = ["1280,800", "1280,960", "1280,1024", "1440,900", "1440,1080", "1600,1200", "1920,1080",
                        "1920,1200"]
+
+        resolution = resolutions[random.randrange(0, len(resolutions))]
+
+        logger.debug("Loading new cookie for arbitr courts. Starting chrome.")
         chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument(
-            "--user-agent=" + self.__user_agent)
+        chrome_options.add_argument("--user-agent=" + self.__user_agent)
         chrome_options.add_argument("--incognito")
         chrome_options.add_argument("--disable-plugins-discovery")
         chrome_options.add_argument("--disable-features=UserAgentClientHint")
-        chrome_options.add_argument("window-size=" + resolutions[random.randrange(0, len(resolutions))])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
+        chrome_options.add_argument("window-size=" + resolution)
+        chrome_prefs = {"intl.accept_languages": accept_language}
+        chrome_options.add_experimental_option("useAutomationExtension", False)
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        service = ChromeService(ChromeDriverManager().install())
+        chrome_options.add_experimental_option("prefs", chrome_prefs)
+        chrome_service = ChromeService(ChromeDriverManager().install())
         while True:
             try:
-                driver = webdriver.Chrome(service=service, options=chrome_options)
+                driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
                 break
-            except:
+            except Exception as ce:
                 time.sleep(3)
+
         # driver.set_window_position(-2000, 0)
         driver.get(self.__base_url)
         # waiting for scripts to complete and generate last cookie - wasm

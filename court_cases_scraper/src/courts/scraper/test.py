@@ -16,7 +16,7 @@ from court_cases_scraper.src.courts.scraper import (parser_1,
                                                     parser_7,
                                                     parser_8)
 
-test_mode = 8
+test_mode = 7
 check_date = "10.10.2022"
 check_date_dt = datetime.strptime("10.10.2022", "%d.%m.%Y")
 
@@ -37,6 +37,10 @@ match test_mode:
         court = {"title": "KRD_KKS", "link": "https://kraevoi--krd.sudrf.ru", "server_num": "1", "alias": "krd-kks",
                  "check_date": check_date_dt}
         result, out_court, status = parser_3.parse_page(court)
+    case 5:
+        court = {"title": "msc mir sud", "link": "https://mos-sud.ru", "alias": "msk-mir",
+                 "check_date": check_date_dt}
+        result, out_court, status = parser_5.parse_page(court)
     case 7:
         court = {"title": "stav mir sud", "link": "https://stavmirsud.ru/officework", "alias": "stav-mir",
                  "check_date": check_date_dt}
@@ -49,7 +53,7 @@ match test_mode:
         result = []
         status = ""
         out_court = []
-db_tools.load_to_stage_alchemy(result, db_config)
+db_tools.load_to_stage(result, db_config)
 
 print(result)
 print(len(result))

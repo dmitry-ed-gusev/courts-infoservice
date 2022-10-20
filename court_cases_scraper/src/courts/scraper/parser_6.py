@@ -9,18 +9,21 @@ import random
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config as config
+from courts.config import scraper_config
 from court_cases_scraper.src.courts.config import selenium_config
 from courts.db.db_tools import convert_data_to_df
+from courts.utils.utilities import threadsafe_function
 
 
+@threadsafe_function
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output js page"""
     result = []
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     while True:
         try:
-            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=selenium_config.firefox_options)
+            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+                                       options=selenium_config.firefox_options)
             break
         except:
             time.sleep(3)
@@ -69,6 +72,5 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
     driver.close()
-    data_frame = convert_data_to_df(result, config.STAGE_MAPPING_6)
+    data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[6]["stage_mapping"])
     return data_frame, court, "success"
-
