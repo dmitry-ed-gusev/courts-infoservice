@@ -16,7 +16,7 @@ from court_cases_scraper.src.courts.scraper import (parser_1,
                                                     parser_7,
                                                     parser_8)
 
-test_mode = 5
+test_mode = 7
 check_date = "10.10.2022"
 check_date_dt = datetime.strptime("10.10.2022", "%d.%m.%Y")
 

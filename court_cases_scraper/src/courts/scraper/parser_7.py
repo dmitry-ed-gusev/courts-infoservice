@@ -13,7 +13,7 @@ from courts.db.db_tools import convert_data_to_df
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
     session = WebClient()
-    session.headers = {"user-agent": scraper_config.USER_AGENT}
+    session.headers = {"user-agent": scraper_config.USER_AGENT,  "cache-control": "private, max-age=0, no-cache"}
     check_date = court.get("check_date").strftime("%Y-%m-%d")
     result = []
     case_types = ["caselistus", "caselistcs", "caselistas"]
