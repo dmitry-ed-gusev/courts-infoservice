@@ -7,19 +7,25 @@
         - (list of settings) https://docs.djangoproject.com/en/4.1/ref/settings/
 
     Created:  Dmitrii Gusev, 16.10.2022
-    Modified: Dmitrii Gusev, 17.10.2022
+    Modified: Dmitrii Gusev, 21.10.2022
 """
 
 import os
+import json
+import logging
 from pathlib import Path
+
+log = logging.getLogger(__name__)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Used for a default title
 APP_TITLE = 'Все суды РФ'
 APP_NAME = 'Информация о судебных делах РФ'
+
+# Database configuration JSON file
+DB_CONFIG_JSON = "_db_config.json"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -30,7 +36,8 @@ SECRET_KEY = "django-insecure-q)33m-yhqo*(%tx#z*zo()yj*3lq94-*5+5(1c@s^vd)q6tn6h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']  # todo: check this setting!
+# todo: check this setting!
+ALLOWED_HOSTS = ['*', 'courts.itech-lab.ru', 'www.courts.itech-lab.ru']
 
 
 # Application definition
@@ -104,26 +111,20 @@ WSGI_APPLICATION = "courtsinfo.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
+# DATABASES = {
 
-    'mysql': {  # MySql DB (hosting)
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'zzzzz',
-        'USER': 'xxxxx',
-        'PASSWORD': 'ccccc',
-        'HOST': '<db host>',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
-    },
+#     "default": {  # simple sqlite database (testing)
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
 
-    "default": {  # simple sqlite database (testing)
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+# }
 
-}
+# todo: put it somewhere?
+with open(DB_CONFIG_JSON, 'r') as f:
+    db_config = json.load(f)
 
+DATABASES = db_config
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -161,6 +162,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = "static/"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -244,7 +246,7 @@ LOGGING = {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
             "formatter": "simple",
-            "filename": str(BASE_DIR) + "/log_info.log",
+            "filename": str(BASE_DIR) + "/logs/log_info.log",
             "maxBytes": 10485760,  # 10MB
             "backupCount": 20,
             "encoding": "UTF-8",
@@ -254,7 +256,7 @@ LOGGING = {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "ERROR",
             "formatter": "simple",
-            "filename": str(BASE_DIR) + "/log_errors.log",
+            "filename": str(BASE_DIR) + "/logs/log_errors.log",
             "maxBytes": 10485760,  # 10MB
             "backupCount": 20,
             "encoding": "UTF-8",

@@ -140,6 +140,5 @@ output/
 .DS_Store
 .env*
 
-# concrete CSV files to be ignored
-dm_court_cases.csv
-dm_v_court_stats.csv
+# Database configuration file
+_db_config.json

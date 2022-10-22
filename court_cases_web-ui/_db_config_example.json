@@ -1,0 +1,12 @@
+{
+    "default": {
+        "ENGINE": "<DB engine, for example: django.db.backends.mysql>",
+        "NAME": "<DB name>",
+        "USER": "<DB user>",
+        "PASSWORD": "<DB password>",
+        "HOST": "<DB host>",
+        "OPTIONS": {
+            "<additional_option>": "<option_value>"
+        }
+    }
+}
