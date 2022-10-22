@@ -78,39 +78,34 @@ def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_
 def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
     """router with parallel execution"""
     futures = []  # list to store future results of threads
-    executor1 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[1]["workers_count"], thread_name_prefix="thread_1")
-    executor2 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[2]["workers_count"], thread_name_prefix="thread_2")
-    executor3 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[3]["workers_count"], thread_name_prefix="thread_3")
-    executor4 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[4]["workers_count"], thread_name_prefix="thread_4")
-    executor5 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[5]["workers_count"], thread_name_prefix="thread_5")
-    executor6 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[6]["workers_count"], thread_name_prefix="thread_6")
-    executor7 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[7]["workers_count"], thread_name_prefix="thread_7")
-    executor8 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[8]["workers_count"], thread_name_prefix="thread_8")
+    executor1 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[1]["workers_count"])
+    executor2 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[2]["workers_count"])
+    executor3 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[3]["workers_count"])
+    executor4 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[4]["workers_count"])
+    executor5 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[5]["workers_count"])
+    executor6 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[6]["workers_count"])
+    executor7 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[7]["workers_count"])
+    executor8 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[8]["workers_count"])
     for court in courts_config:
         if court["parser_type"] == "1":
             future = executor1.submit(parser_1.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "2":
             future = executor2.submit(parser_2.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "3":
             future = executor3.submit(parser_3.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "4":
             future = executor4.submit(parser_4.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "5":
             future = executor5.submit(parser_5.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "6":
             future = executor6.submit(parser_6.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "7":
             future = executor7.submit(parser_7.parse_page, court)
-            futures.append(future)
         elif court["parser_type"] == "8":
             future = executor8.submit(parser_8.parse_page, court)
-            futures.append(future)
+        else:
+            continue
+        futures.append(future)
     loaded = 0
     failed = 0
     for task in as_completed(futures):
@@ -131,15 +126,15 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
                 try:
                     db_tools.load_to_stage(result_part, db_config)
                     break
-                except:
-                    logger.warning("Failed to load data to stage. Retry in 3 seconds")
+                except Exception as estg:
+                    logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
                     time.sleep(3)
             while True:
                 try:
                     db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
                     break
-                except:
-                    logger.warning("Failed to load data to dm. Retry in 3 seconds")
+                except Exception as edm:
+                    logger.warning("Failed to load data to dm. Retry in 3 seconds - " + str(edm))
                     time.sleep(3)
         if status == "success":
             logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
@@ -155,8 +150,8 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
             try:
                 db_tools.log_scrapped_court(db_config, court_config["alias"], court_config["check_date"], status)
                 break
-            except:
-                logger.warning("Failed to load log entry. Retry in 3 seconds")
+            except Exception as elog:
+                logger.warning("Failed to load log entry. Retry in 3 seconds - " + str(elog))
                 time.sleep(3)
 
 
@@ -164,7 +159,7 @@ def main() -> None:
     """main class"""
     # add file logger
     log_file_name = "../log/" + datetime.now().strftime("scrap_to_db_%Y-%m-%d_%H%M%S.log")
-    logger.add(sys.stderr, level="DEBUG")
+    logger.add(sys.stderr, level="INFO")
     logger.add(log_file_name, encoding="utf-8", retention="7 days")
 
     # Load environment variables from .env_hosting file from the project root dir

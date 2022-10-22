@@ -61,7 +61,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko)
 STAGE_TABLE = "stage_stg_court_cases"
 
 SCRAPER_CONFIG = {
-    1: {"workers_count": 8,
+    1: {"workers_count": 5,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -137,7 +137,7 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "col0_link"},
                           ]
         },
-    6: {"workers_count": 3,
+    6: {"workers_count": 1,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -153,7 +153,7 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "col1_link"},
                           ]
         },
-    7: {"workers_count": 2,
+    7: {"workers_count": 1,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
