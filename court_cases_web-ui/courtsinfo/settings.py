@@ -25,7 +25,8 @@ APP_TITLE = 'Все суды РФ'
 APP_NAME = 'Информация о судебных делах РФ'
 
 # Database configuration JSON file
-DB_CONFIG_JSON = "_db_config.json"
+DB_CONFIG_JSON = str(BASE_DIR) + "/_db_config.json"
+print(DB_CONFIG_JSON)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
