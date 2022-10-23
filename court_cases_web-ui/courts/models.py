@@ -1,7 +1,9 @@
+from pyexpat import model
 from django.db import models
 
 
 class DmCourtCases(models.Model):
+    id = models.BigAutoField(primary_key=True)
     court = models.CharField(max_length=200, blank=True, null=True)
     court_alias = models.CharField(max_length=50, blank=True, null=True)
     check_date = models.DateField(blank=True, null=True)

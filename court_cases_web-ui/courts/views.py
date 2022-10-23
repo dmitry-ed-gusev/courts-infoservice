@@ -43,8 +43,10 @@ class CourtsListView(LoginRequiredMixin, ListView):
             query.add(Q(judge__icontains=strval), Q.OR)
             object_list = DmCourtCases.objects.filter(query).select_related().distinct()
         else:  # no search string - provide the full list
-            object_list = DmCourtCases.objects.all().order_by('court_alias')
-
+            # object_list = DmCourtCases.objects.all()  # .order_by('court_alias')
+            object_list = DmCourtCases.objects.iterator()
+            object_list
+            
         paginator = Paginator(object_list, PAGE_SIZE)  # todo: !!!
 
         # found objects list size
