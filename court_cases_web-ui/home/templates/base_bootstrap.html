@@ -1,0 +1,75 @@
+<!-- base page template (with bootstrap 3.x) -->
+
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <!-- generated block: TITLE, edit: courtsinfo/settings.py -> APP_TITLE parameter -->
+    <title>
+        {% block title %}
+            {{ settings.APP_TITLE }}
+        {% endblock %}
+    </title>
+
+    <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css"
+        crossorigin="anonymous">
+
+    <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap-theme.min.css"
+        crossorigin="anonymous">
+
+    <link rel="stylesheet"
+        href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css"
+        crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
+        crossorigin="anonymous"></script>
+
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"
+        crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+        crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/v4-shims.css">
+
+    {% block head %}{% endblock %}
+
+</head>
+
+<body>
+    <!-- generated block: page top (page header) -->
+
+    <!-- 
+        page container: 
+            - use .container for a responsive fixed width container
+            - use .container-fluid for a full width container, spanning the entire width of viewport
+    -->
+    <div class="container-fluid">
+
+        {% block navbar %} {% endblock %} <!-- page navigation bar component -->
+
+        {% block welcome %} {% endblock %} <!-- page welcome message -->
+
+        {% block messages %} <!-- page messages (if any) -->
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="alert alert-{{msg.level_tag}}" role="alert">
+                        {{msg.message}}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endblock %}
+
+        {% block content %} {% endblock %} <!-- main page content -->
+
+    </div>
+
+    <!-- generated block: page bottom (page footer) -->
+    {% block footer %} {% endblock %}
+</body>
+
+</html>

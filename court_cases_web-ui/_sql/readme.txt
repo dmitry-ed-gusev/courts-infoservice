@@ -1,0 +1,1 @@
+Directory for SQL scripts used for DBMS (init structure, data etc.)

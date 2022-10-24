@@ -1,0 +1,37 @@
+###############################################################################
+#
+#   .coveragerc config file to control coverage.py / pytest-cov plugins.
+#
+#   See full doc here:
+#       - https://coverage.readthedocs.io/en/latest/config.html
+#       - https://pytest-cov.readthedocs.io/en/latest/index.html
+#
+#   Created:  Dmitrii Gusev, 16.10.2022
+#   Modified:
+#
+###############################################################################
+
+[run]
+branch = True
+data_file = .coverage/.coverage
+omit =
+        *__init__*
+        *temp*
+        *tests/*
+
+[report]
+show_missing = True
+# -- show 2 decimal digits for coverage values
+precision = 2
+
+[html]
+directory = .coverage/htmlcoverage
+title = "Courts Info Service: Telegram Bot"
+
+[xml]
+output = .coverage/coverage.xml
+
+# -- used by coverage.py, ignored by pytest-cov
+[json]
+output = .coverage/coverage.json
+pretty_print = True

@@ -139,3 +139,6 @@ output/
 # some files that should be ignored
 .DS_Store
 .env*
+
+# Database configuration file
+_db_config.json

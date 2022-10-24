@@ -1,0 +1,41 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+djangorestframework = "*"
+django-extensions = "*"
+django-crispy-forms = "*"
+django-filter = "*"
+django-taggit = "*"
+social-auth-app-django = "*"
+social-auth-core = "*"
+markdown = "*"
+mysqlclient = "*"
+faker = "*"
+python-dotenv = "*"
+
+[dev-packages]
+ipykernel = "*"
+nose2 = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+responses = "*"
+mypy = "*"
+types-requests = "*"
+flake8 = "*"
+black = "*"
+pre-commit = "*"
+build = "*"
+sphinx = "*"
+types-six = "*"
+mock = "*"
+
+[requires]
+python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true

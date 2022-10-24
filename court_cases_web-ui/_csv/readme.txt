@@ -1,0 +1,1 @@
+Directory for the CSV data. Usually should not be commited to Git.
