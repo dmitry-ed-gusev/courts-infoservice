@@ -16,7 +16,7 @@ from court_cases_scraper.src.courts.scraper import (parser_1,
                                                     parser_7,
                                                     parser_8)
 
-test_mode = 7
+test_mode = 5
 check_date = "10.10.2022"
 check_date_dt = datetime.strptime("10.10.2022", "%d.%m.%Y")
 
@@ -53,7 +53,7 @@ match test_mode:
         result = []
         status = ""
         out_court = []
-db_tools.load_to_stage(result, db_config)
+# db_tools.load_to_stage(result, db_config)
 
 print(result)
 print(len(result))

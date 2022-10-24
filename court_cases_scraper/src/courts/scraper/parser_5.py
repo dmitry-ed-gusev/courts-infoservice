@@ -17,9 +17,9 @@ from courts.db.db_tools import convert_data_to_df
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses mos sud page with paging"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
-    firefox_service = Service(GeckoDriverManager().install())
     while True:
         try:
+            firefox_service = Service(GeckoDriverManager().install())
             driver = webdriver.Firefox(service=firefox_service,
                                        options=selenium_config.firefox_options)
             break

@@ -116,8 +116,8 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
                 round(loaded / (total - failed) * 100, 2)) + "% loaded.")
         try:
             result_part, court_config, status = task.result()
-        except:
-            logger.warning("Unexpected error in one of the workees. Skipping")
+        except Exception as ue:
+            logger.warning("Unexpected error in one of the workers. Skipping. Error:\n" + str(ue))
             failed += 1
             continue
         result_len = len(result_part)
@@ -159,7 +159,7 @@ def main() -> None:
     """main class"""
     # add file logger
     log_file_name = "../log/" + datetime.now().strftime("scrap_to_db_%Y-%m-%d_%H%M%S.log")
-    logger.add(sys.stderr, level="INFO")
+    logger.add(sys.stderr, level="DEBUG")
     logger.add(log_file_name, encoding="utf-8", retention="7 days")
 
     # Load environment variables from .env_hosting file from the project root dir
