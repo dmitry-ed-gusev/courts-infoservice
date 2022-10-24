@@ -23,7 +23,7 @@ class CourtsListView(LoginRequiredMixin, ListView):
     template_name = 'courts/courts_list.html'
 
     model = DmCourtCases
-    # paginate_by: int = 25
+    # paginate_by = 25
     # context_object_name = 'object_list'
 
     def get(self, request):
@@ -36,35 +36,31 @@ class CourtsListView(LoginRequiredMixin, ListView):
         if strval:  # there is non-empty search string
             # Multi-field search (several fields), __icontains -> for case-insensitive search
             query = Q(court__icontains=strval)
-            query.add(Q(court_alias__icontains=strval), Q.OR)
             query.add(Q(section_name__icontains=strval), Q.OR)
             query.add(Q(case_num__icontains=strval), Q.OR)
             query.add(Q(case_info__icontains=strval), Q.OR)
             query.add(Q(judge__icontains=strval), Q.OR)
             object_list = DmCourtCases.objects.filter(query).select_related().distinct()
-        else:  # no search string - provide the full list
+
+            # found objects list size
+            log.debug(f'Objects list size: {len(object_list)}')
+            objects_list_size = len(object_list)
+
+            # when we've created object_list (found all data) - add pagination to it
+            paginator = Paginator(object_list, PAGE_SIZE)  # use Paginator and show XX items per page
+            page_number = request.GET.get('page', 1)  # current page number
+            # get the current Page (frame of data) from Paginator and replace the found
+            # objects list with the current frame of data (we have to show only the current page)
+            page_obj = paginator.get_page(page_number)
+            object_list = page_obj
+
+            # creating the context for the page: list of ADs (limited by search), favorites, search string
+            ctx = {'object_list': object_list, 'size': objects_list_size, 'page_size': PAGE_SIZE,
+                   'search': strval, 'page_obj': page_obj}
+
+        else:  # no search string - provide the full list (!!!) - empty page!
             # object_list = DmCourtCases.objects.all()  # .order_by('court_alias')
-            object_list = DmCourtCases.objects.iterator()
-            object_list
-            
-        paginator = Paginator(object_list, PAGE_SIZE)  # todo: !!!
-
-        # found objects list size
-        log.debug(f'Objects list size: {len(object_list)}')
-        objects_list_size = len(object_list)
-
-        # when we've created object_list (found all data) - add pagination to it
-        #paginator = Paginator(object_list, PAGE_SIZE)  # use Paginator and show XX items per page
-        page_number = request.GET.get('page', 1)  # current page number
-        # get the current Page (frame of data) from Paginator and replace the found
-        # objects list with the current frame of data (we have to show only the current page)
-        page_obj = paginator.get_page(page_number)
-        object_list = page_obj
-        log.debug('Generated the current page.')
-
-        # creating the context for the page: list of ADs (limited by search), favorites, search string
-        ctx = {'object_list': object_list, 'size': objects_list_size, 'page_size': PAGE_SIZE,
-               'search': strval, 'page_obj': page_obj}
+            ctx = {}
 
         return render(request, self.template_name, ctx)
 
