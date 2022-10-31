@@ -17,7 +17,11 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output js page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     result = []
+    retries = 0
     while True:
+        retries += 1
+        if retries > 4:
+            return DataFrame(), court, "failure"
         try:
             driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
                                        options=selenium_config.firefox_options)

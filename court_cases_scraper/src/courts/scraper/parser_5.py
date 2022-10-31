@@ -19,7 +19,8 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     while True:
         try:
-            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+            firefox_service = Service(GeckoDriverManager().install())
+            driver = webdriver.Firefox(service=firefox_service,
                                        options=selenium_config.firefox_options)
             break
         except:
@@ -86,10 +87,18 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             page_num += 1
         else:
             break
-    try:
-        driver.close()
-    except:
-        None
+        # closes 10 windows and open new driver
+        if page_num % 10 == 0:
+            driver.close()
+            while True:
+                try:
+                    driver = webdriver.Firefox(service=firefox_service,
+                                               options=selenium_config.firefox_options)
+                    break
+                except:
+                    time.sleep(3)
+
+    driver.close()
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[5]["stage_mapping"])
     return data_frame, court, "success"
 

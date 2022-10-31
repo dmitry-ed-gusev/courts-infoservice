@@ -122,7 +122,7 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "case_link"},
                           ]
         },
-    5: {"workers_count": 6,
+    5: {"workers_count": 3,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -137,7 +137,7 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "col0_link"},
                           ]
         },
-    6: {"workers_count": 3,
+    6: {"workers_count": 1,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -153,7 +153,7 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "col1_link"},
                           ]
         },
-    7: {"workers_count": 2,
+    7: {"workers_count": 1,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
