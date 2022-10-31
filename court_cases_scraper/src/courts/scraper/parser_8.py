@@ -98,7 +98,11 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     logger.debug("Requesting " + court.get("link") + " server " + court.get("server_num") + " date " + check_date)
     options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
+    retries = 0
     while True:
+        retries += 1
+        if retries > 4:
+            return DataFrame(), court, "failure"
         try:
             req_driver = Firefox(options=options)
             break
@@ -127,7 +131,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     else:
         for i in range(0, 10):
             logger.debug("Requesting " + court["alias"] + " for " + check_date + " part " + str(i + 1) + " of 10.")
-            time.sleep(random.randrange(3, 5))
+            time.sleep(random.randrange(2, 4))
             data = '{"needConfirm":false,"DateFrom":"' + check_date + 'T00:00:00","Sides":[],"Cases":["' + str(
                 i) + '/20"],"Judges":[],"JudgesEx":[],"Courts":["' + court.get(
                 "server_num") + '"]}'
@@ -141,7 +145,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     status_code = response.status_code
                     json_data = json.loads(response.content)
                 except Exception as e:
-                    time.sleep(random.randrange(3, 5))
+                    time.sleep(random.randrange(2, 4))
                     status_code = -1
                 if status_code == 200:
                     break
@@ -150,7 +154,11 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
 
             result.extend(parse_arbitrary_json(court, json_data))
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[8]["stage_mapping"])
+    retries = 0
     while True:
+        retries += 1
+        if retries > 4:
+            break
         try:
             req_driver.close()
             break
