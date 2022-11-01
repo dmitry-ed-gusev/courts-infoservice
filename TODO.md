@@ -31,6 +31,7 @@
 7. Web UI: proper serving of the static files
 8. ~~Web UI: initially show the empty screen with the search form - once search performed - show results~~
 9. Make links from [Statistics] page to the courts details page
+10. На сайте поле Стадия выдает None для null значений из БД
 
 ## Telegram Bot Improvements
 
