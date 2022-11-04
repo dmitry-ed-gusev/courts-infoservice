@@ -88,3 +88,34 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
 
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[4]["stage_mapping"])
     return data_frame, court, "success"
+
+
+def get_links(link_config: dict) -> tuple[DataFrame, str]:
+    """extracts case_uid"""
+    case_num = link_config["case_link"].split("=")[1].replace("%2F", "/")
+    court_site_id = link_config["case_link"].split("/")[5]
+    session = WebClient()
+    api_search = link_config["link"] + "/cases/api/detail/?id=" + case_num + "&court_site_id=" + court_site_id
+    get_search = session.get(api_search)
+    logger.debug(api_search)
+    search_id = get_search.json()["id"]
+    finished = False
+    total_tries = 0
+    while not finished:
+        total_tries += 1
+        content = session.get(link_config["link"] + "/cases/api/results/?id=" + search_id)
+        if content.status_code == 200:
+            content_json = content.json()
+            finished = content_json["finished"]
+        if not finished:
+            time.sleep(3)
+        if total_tries > scraper_config.MAX_RETRIES:
+            return DataFrame(), "failure"
+    case_uid = content_json["result"]["judicial_uid"]
+
+    data = {"case_link": [link_config["case_link"], ],
+            "case_num": [link_config["case_num"], ],
+            "case_uid": [case_uid, ],
+            }
+    result = DataFrame(data)
+    return result, "success"

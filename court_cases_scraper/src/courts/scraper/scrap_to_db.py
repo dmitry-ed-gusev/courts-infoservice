@@ -61,8 +61,8 @@ def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_
             continue
         result_len = len(result_part)
         if result_len > 0:
-            db_tools.load_to_stage(result_part, db_config)
-            db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
+            db_tools.load_courts_to_stage(result_part, db_config)
+            db_tools.load_courts_to_dm(db_config, court_config["alias"], court_config["check_date"])
         if status == "success":
             logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
                 "alias"] + " date " + court_config["check_date"].strftime(
@@ -124,14 +124,14 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
         if result_len > 0:
             while True:
                 try:
-                    db_tools.load_to_stage(result_part, db_config)
+                    db_tools.load_courts_to_stage(result_part, db_config)
                     break
                 except Exception as estg:
                     logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
                     time.sleep(3)
             while True:
                 try:
-                    db_tools.load_to_dm(db_config, court_config["alias"], court_config["check_date"])
+                    db_tools.load_courts_to_dm(db_config, court_config["alias"], court_config["check_date"])
                     break
                 except Exception as edm:
                     logger.warning("Failed to load data to dm. Retry in 3 seconds - " + str(edm))
@@ -171,7 +171,7 @@ def main() -> None:
                  "db": os.environ["MYSQL_DB"]
                  }
     courts_config = db_tools.read_courts_config(db_config)
-    db_tools.clean_stage_table(db_config)
+    db_tools.clean_stage_courts_table(db_config)
     scrap_courts(courts_config, db_config)
     # scrap_courts_no_parallel(courts_config, db_config)
 

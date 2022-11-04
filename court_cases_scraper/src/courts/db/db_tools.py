@@ -8,9 +8,9 @@ from pandas import DataFrame
 from court_cases_scraper.src.courts.config import scraper_config, db_init_config
 
 
-def clean_stage_table(db_config: dict[str, str]):
-    """cleans stage table"""
-    logger.debug("Cleaning stage table.")
+def clean_stage_courts_table(db_config: dict[str, str]):
+    """cleans stage courts table"""
+    logger.debug("Cleaning stage courts table.")
     engine = create_engine("mysql+pymysql://"
                            + db_config.get("user")
                            + ":" + db_config.get("passwd")
@@ -24,7 +24,26 @@ def clean_stage_table(db_config: dict[str, str]):
     connection.execute(sa_text(sql))
     connection.commit()
     connection.close()
-    logger.debug("Stage table cleaned.")
+    logger.debug("Stage courts table cleaned.")
+
+
+def clean_stage_links_table(db_config: dict[str, str]):
+    """cleans stage links table"""
+    logger.debug("Cleaning stage links table.")
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+
+    connection = engine.connect()
+    sql = "delete from " + scraper_config.LINKS_STAGE_TABLE
+    connection.execute(sa_text(sql))
+    connection.commit()
+    connection.close()
+    logger.debug("Stage links table cleaned.")
 
 
 def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: datetime, status: str) -> None:
@@ -61,26 +80,6 @@ def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
     connection.close()
 
 
-def load_to_dm(db_config: dict[str, str], court_alias: str, check_date: datetime) -> None:
-    """calls load to dm procedure"""
-    engine = create_engine("mysql+pymysql://"
-                           + db_config.get("user")
-                           + ":" + db_config.get("passwd")
-                           + "@" + db_config.get("host")
-                           + ":" + db_config.get("port")
-                           + "/" + db_config.get("db")
-                           + "?charset=utf8&local_infile=1")
-
-    logger.debug("Connected. Starting merge to DM")
-    connection = engine.connect()
-    sql = sa_text("call dm_p_load_court_cases(:court_alias, :check_date)")
-    params = {"court_alias": court_alias, "check_date": check_date.strftime("%d.%m.%Y")}
-    connection.execute(sql, params)
-    connection.commit()
-    connection.close()
-    logger.debug("Merge to DM completed.")
-
-
 def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     """reads court config from db"""
     engine = create_engine("mysql+pymysql://"
@@ -111,12 +110,43 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
                  "parser_type": row1[4],
                  "check_date": row1[5]}
             )
-    logger.debug("Config read completed.")
+    logger.debug("Courts config read completed.")
     connection.close()
     return result
 
 
-def load_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> None:
+def read_links_config(db_config: dict[str, str]) -> list[dict[str, str]]:
+    """reads court config from db"""
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+    connection = engine.connect()
+
+    logger.debug("Connected. Reading links config from DB.")
+    result = []
+    sql = sa_text("select case_link, case_num, parser_type, link "
+                  "from config_v_links_to_refresh "
+                  )
+    result_1 = connection.execute(sql)
+    if result_1:
+        for row1 in result_1:
+            result.append(
+                {"case_link": row1[0],
+                 "case_num": row1[1],
+                 "parser_type": row1[2],
+                 "link": row1[3],
+                 }
+            )
+    logger.debug("Links config read completed.")
+    connection.close()
+    return result
+
+
+def load_courts_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> None:
     """loads parsed data to stage"""
     if len(data_frame) == 0:
         return
@@ -128,7 +158,7 @@ def load_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> None:
                            + "/" + db_config.get("db")
                            + "?charset=utf8&local_infile=1")
     connection = engine.connect()
-    logger.debug("Loading to stage")
+    logger.debug("Loading courts to stage")
     data_frame.to_sql(scraper_config.STAGE_TABLE, engine, index=False, if_exists="append")
 
     # trying to find case_num in our dm
@@ -139,6 +169,63 @@ def load_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> None:
     connection.commit()
     logger.debug("Loaded " + str(len(data_frame)) + " rows to stage.")
     connection.close()
+
+
+def load_courts_to_dm(db_config: dict[str, str], court_alias: str, check_date: datetime) -> None:
+    """calls load to dm procedure"""
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+
+    logger.debug("Connected. Starting merge courts to DM")
+    connection = engine.connect()
+    sql = sa_text("call dm_p_load_court_cases(:court_alias, :check_date)")
+    params = {"court_alias": court_alias, "check_date": check_date.strftime("%d.%m.%Y")}
+    connection.execute(sql, params)
+    connection.commit()
+    connection.close()
+    logger.debug("Merge to DM completed.")
+
+
+def load_links_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> None:
+    """loads parsed data to stage"""
+    if len(data_frame) == 0:
+        return
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+    connection = engine.connect()
+    logger.debug("Loading links to stage")
+    data_frame.to_sql(scraper_config.LINKS_STAGE_TABLE, engine, index=False, if_exists="append")
+    logger.debug("Loaded " + str(len(data_frame)) + " rows to stage.")
+    connection.close()
+
+
+def load_links_to_dm(db_config: dict[str, str]) -> None:
+    """calls load to dm procedure"""
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+
+    logger.debug("Connected. Starting merge links to DM")
+    connection = engine.connect()
+    sql = sa_text("call dm_p_load_case_links()")
+    connection.execute(sql)
+    connection.commit()
+    connection.close()
+    logger.debug("Merge to DM completed.")
 
 
 def convert_data_to_df(data: list[dict[str, str]], stage_mapping: list[dict[str, str]]) -> DataFrame:

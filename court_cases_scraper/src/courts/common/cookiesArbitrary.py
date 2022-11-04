@@ -104,7 +104,7 @@ class CookiesArbitrary:
             except Exception as ce:
                 time.sleep(3)
 
-        # driver.set_window_position(-2000, 0)
+        driver.minimize_window()
         driver.get(self.__base_url)
         # waiting for scripts to complete and generate last cookie - wasm
         while "wasm" not in (i["name"] for i in driver.get_cookies()):

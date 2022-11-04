@@ -12,6 +12,7 @@ from pandas import DataFrame
 from courts.config import scraper_config
 from court_cases_scraper.src.courts.config import selenium_config
 from courts.db.db_tools import convert_data_to_df
+from courts.web.web_client import WebClient
 
 
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
@@ -39,6 +40,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             retries += 1
             time.sleep(random.randrange(0, 3))
             if retries > 4:
+                driver.close()
                 return DataFrame(), court, "failure"
             try:
                 driver.get(url)
@@ -102,3 +104,46 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[5]["stage_mapping"])
     return data_frame, court, "success"
 
+
+def get_links(link_config: dict) -> tuple[DataFrame, str]:
+    """extracts linked cases and case_uid"""
+    retries = 0
+    while True:
+        retries += 1
+        if retries > 4:
+            return DataFrame(), "failure"
+        try:
+            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+                                       options=selenium_config.firefox_options)
+            break
+        except:
+            time.sleep(3)
+    logger.debug(link_config["case_link"])
+    retries = 0
+    while True:
+        retries += 1
+        if retries > 4:
+            driver.close()
+            return DataFrame(), "failure"
+        try:
+            driver.get(link_config["case_link"])
+            html = driver.page_source
+            driver.close()
+            break
+        except:
+            None
+
+    soup = BeautifulSoup(html, 'html.parser')
+    rows = soup.find_all("div", class_="row_card")
+    case_uid = ""
+    for row in rows:
+        cols = row.find_all("div")
+        if cols[0].text.strip() == "Уникальный идентификатор дела":
+            case_uid = cols[1].text.strip()
+
+    data = {"case_link": [link_config["case_link"], ],
+            "case_num": [link_config["case_num"], ],
+            "case_uid": [case_uid, ],
+            }
+    result = DataFrame(data)
+    return result, "success"

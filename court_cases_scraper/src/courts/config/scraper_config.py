@@ -53,15 +53,16 @@ class Config():
 
 
 MAX_RETRIES = 5
-RANGE_BACKWARD = 14
+RANGE_BACKWARD = 30
 RANGE_FORWARD = 45
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko) Chrome/22.0.1216.0 Safari/537.2"
 
 STAGE_TABLE = "stage_stg_court_cases"
+LINKS_STAGE_TABLE = "stage_stg_case_links"
 
 SCRAPER_CONFIG = {
-    1: {"workers_count": 8,
+    1: {"workers_count": 7,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -122,7 +123,7 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "case_link"},
                           ]
         },
-    5: {"workers_count": 3,
+    5: {"workers_count": 5,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
