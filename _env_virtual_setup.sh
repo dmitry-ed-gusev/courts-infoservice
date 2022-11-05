@@ -69,7 +69,7 @@ setup_virtual_env() {
 
     # - check for vulnerabilities and show dependencies graph
     printf "\nChecking virtual environment for vulnerabilities.\n"
-    pipenv check
+    pipenv check || printf "There are some issues, check logs...\n"
     pipenv graph
 
     # - outdated packages report
