@@ -12,7 +12,7 @@
         - (fake User Agent) https://github.com/hellysmile/fake-useragent
         - (HTTP status codes) https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 
-    Created:  Dmitrii Gusev, 13.10.2022
+    Created:  Dmitrii Gusev, 08.11.2022
     Modified:
 """
 
@@ -30,6 +30,25 @@ log = logging.getLogger(__name__)
 HTTP_DEFAULT_TIMEOUT = 20  # default HTTP requests timeout (seconds)
 HTTP_DEFAULT_BACKOFF = 1  # default back off factor (it is better to not touch this value!)
 HTTP_DEFAUT_RETRIES = 4  # default retries num for HTTP requests (+1 for the original request!)
+
+
+# todo: see sample here: https://github.com/psf/requests/issues/4233
+def expanded_raise_for_status(response, exclude_statuses: List[int]):
+    """Expanded version of requests.raise_for_status() method."""
+
+    # if response code is not in the exclusion list - call raise_for_status()
+    if not exclude_statuses or response.status_code not in exclude_statuses:
+        log.debug(f"Response status: {response.status_code}. Raising for status...")
+        response.raise_for_status()
+
+    # try:
+    #     res.raise_for_status()
+    # except HTTPError as e:
+    #     if res.text:
+    #         raise HTTPError('{} Error Message: {}'.format(str(e.message), res.text))
+    #     else:
+    #        raise e
+    # return
 
 
 class TimeoutHTTPAdapter(HTTPAdapter):
@@ -73,7 +92,7 @@ class WebClient:
     def __init__(self, headers: Dict[str, str] = None, cookies: Dict[str, str] = None, auth=None,
                  user_agent: str = "", allow_redirects: bool = True, redirects_count: int = 0,
                  timeout: int = HTTP_DEFAULT_TIMEOUT, retries: int = HTTP_DEFAUT_RETRIES,
-                 update_user_agents_info: bool = False) -> None:
+                 update_user_agents_info: bool = False, dont_raise_for: List[int] = None) -> None:
         log.debug("Initializing WebClient() instance.")
 
         if update_user_agents_info:
@@ -85,8 +104,17 @@ class WebClient:
 
         # setup requests hooks - raise HTTPError for error HTTP status codes 4xx, 5xx, except
         # the statuses specified in status_forcelist parameter of the Retry strategy
-        def assert_status_hook(response, *args, **kwargs): response.raise_for_status()
-        self.__session.hooks["response"] = [assert_status_hook]
+
+        # todo: option I -> raise for all error status codes (4xx, 5xx) except statuses from
+        # todo:   [status_forcelist] list
+        # def assert_status_hook(response, *args, **kwargs): response.raise_for_status()
+
+        # todo: option II: -> raise for all error status codes (4xx, 5xx) except statuses from
+        # todo:   [status_forcelist] list and [dont_raise_for] list
+        def assert_status_hook(response, *args, **kwargs):
+            expanded_raise_for_status(response, dont_raise_for)
+
+        self.__session.hooks["response"] = [assert_status_hook]  # install/link hook to the session
 
         # setup retries strategy for the session - see mounting it below
         retry_strategy = Retry(  # create retry strategy
@@ -295,4 +323,10 @@ class WebClient:
 
 
 if __name__ == "__main__":
-    print(MSG_MODULE_ISNT_RUNNABLE)
+    # print(MSG_MODULE_ISNT_RUNNABLE)
+
+    webclient = WebClient(dont_raise_for=[404, 403])
+    # response = webclient.get("https://kad.arbitr.ru/card/af9fa8bd-8de7-46cc-83ba-2fe769a056a7")
+    response = webclient.get("https://httpbin.org/status/404")
+    print(response.status_code)
+    print(response.text)
