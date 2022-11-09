@@ -90,7 +90,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     return data_frame, court, "success"
 
 
-def get_links(link_config: dict) -> tuple[DataFrame, str]:
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts case_uid"""
     case_num = link_config["case_link"].split("=")[1].replace("%2F", "/")
     court_site_id = link_config["case_link"].split("/")[5]
@@ -110,7 +110,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
         if not finished:
             time.sleep(3)
         if total_tries > scraper_config.MAX_RETRIES:
-            return DataFrame(), "failure"
+            return DataFrame(), link_config, "failure"
     case_uid = content_json["result"]["judicial_uid"]
 
     data = {"case_link": [link_config["case_link"], ],
@@ -118,4 +118,4 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
             "case_uid": [case_uid, ],
             }
     result = DataFrame(data)
-    return result, "success"
+    return result, link_config, "success"

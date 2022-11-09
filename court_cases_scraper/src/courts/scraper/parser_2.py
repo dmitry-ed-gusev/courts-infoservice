@@ -2,6 +2,8 @@
 import time
 import random
 import re
+
+import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
@@ -72,14 +74,14 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     return data_frame, court, "success"
 
 
-def get_links(link_config: dict) -> tuple[DataFrame, str]:
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts linked cases and case_uid"""
-    session = WebClient()
+    session = requests.Session()
     logger.debug(link_config["case_link"])
     try:
         page = session.get(link_config["case_link"])
     except Exception as e:
-        return DataFrame(), "failure"
+        return DataFrame(), link_config, "failure"
 
     soup = BeautifulSoup(page.content, 'html.parser')
     rows = soup.find_all("div", class_="row_card")
@@ -95,4 +97,4 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
             "case_uid": [case_uid, ],
             }
     result = DataFrame(data)
-    return result, "success"
+    return result, link_config, "success"

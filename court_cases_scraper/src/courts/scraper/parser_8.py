@@ -10,10 +10,9 @@ from seleniumrequests import Firefox
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 
-from courts.config import scraper_config
+from courts.config import scraper_config, selenium_config
 from courts.db.db_tools import convert_data_to_df
 from courts.common.cookiesArbitrary import CookiesArbitrary
-from courts.config import selenium_config
 
 
 def parse_arbitrary_json(court: dict, json_data: json) -> list[dict[str, str]]:
@@ -96,8 +95,8 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
 
     result = []
     check_date = court.get("check_date").strftime("%Y-%m-%d")
-    data = '{"needConfirm":false,"DateFrom":"' + check_date + 'T00:00:00","Sides":[],"Cases":[],"Judges":[],"JudgesEx":[],"Courts":["' + court.get(
-        "server_num") + '"]}'
+    data = '{"needConfirm":false,"DateFrom":"' + check_date + \
+           'T00:00:00","Sides":[],"Cases":[],"Judges":[],"JudgesEx":[],"Courts":["' + court.get("server_num") + '"]}'
     logger.debug("Requesting " + court.get("link") + " server " + court.get("server_num") + " date " + check_date)
     options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
@@ -171,49 +170,13 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     return data_frame, court, "success"
 
 
-def get_links(link_config: dict) -> tuple[DataFrame, str]:
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts linked cases and case_uid"""
-    user_agents = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0",
-                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 OPR/91.0.4516.77 (Edition Yx 05)",
-                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.42",
-                   "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/105.0",
-                   "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-                   "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 OPR/91.0.4516.77 (Edition Yx 05)",
-                   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) Gecko/20100101 Firefox/105.0",
-                   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-                   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 OPR/91.0.4516.77 (Edition Yx 05)",
-                   ]
 
-    user_agent = user_agents[random.randrange(0, len(user_agents))]
-
-    accept_languages = ["ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
-                        "en-US,en;q=0.9",
-                        "en-US,fr-CA",
-                        ]
-    accept_language = accept_languages[random.randrange(0, len(accept_languages))]
-
-    resolutions = ["1280,800", "1280,960", "1280,1024", "1440,900", "1440,1080", "1600,1200", "1920,1080",
-                   "1920,1200"]
-
-    resolution = resolutions[random.randrange(0, len(resolutions))]
-
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--user-agent=" + user_agent)
-    chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--disable-plugins-discovery")
-    chrome_options.add_argument("--disable-features=UserAgentClientHint")
-    chrome_options.add_argument("window-size=" + resolution)
-    chrome_prefs = {"intl.accept_languages": accept_language}
-    chrome_options.add_experimental_option("useAutomationExtension", False)
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("prefs", chrome_prefs)
-    chrome_service = ChromeService(ChromeDriverManager().install())
+    chrome_service = ChromeService(ChromeDriverManager(version=selenium_config.chrome_version).install())
     while True:
         try:
-            driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+            driver = webdriver.Chrome(service=chrome_service, options=selenium_config.chrome_options)
             driver.minimize_window()
             break
         except Exception as ce:
@@ -225,21 +188,33 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
         retries += 1
         if retries > 4:
             driver.close()
-            return DataFrame(), "failure"
+            return DataFrame(), link_config, "failure"
         try:
             driver.get(link_config["case_link"])
             html = driver.page_source
-            soup = BeautifulSoup(html, 'html.parser')
+            soup = BeautifulSoup(html, "html.parser")
             break
         except:
             None
 
-    # waiting for scripts to complete and generate last cookie - wasm
-
+    # waiting for scripts to complete
+    retries = 0
     while len(soup.find_all("div", id="b-case-header")) == 0:
+        retries += 1
         time.sleep(3)
         html = driver.page_source
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(html, "html.parser")
+        if retries > 4:
+            driver.close()
+            return DataFrame(), link_config, "failure"
+            # if link is not valid anymore
+        if "Ошибка 404" in html:
+            data = {"case_link": [link_config["case_link"], ],
+                    "case_num": [link_config["case_num"], ],
+                    }
+            result = DataFrame(data)
+            driver.close()
+            return result, link_config, "success"
     result = []
     rows = soup.find_all("div", id="b-case-header")
     for row in rows:
@@ -295,4 +270,4 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
                     result.append(data_row)
 
     result_df = DataFrame(result)
-    return result_df, "success"
+    return result_df, link_config, "success"

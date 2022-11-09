@@ -8,8 +8,7 @@ from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config
-from courts.config import selenium_config
+from courts.config import scraper_config, selenium_config
 from courts.db.db_tools import convert_data_to_df
 
 
@@ -17,13 +16,14 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output js page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     result = []
+    firefox_service = Service(GeckoDriverManager(version=selenium_config.gecko_version).install())
     retries = 0
     while True:
         retries += 1
         if retries > 4:
             return DataFrame(), court, "failure"
         try:
-            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+            driver = webdriver.Firefox(service=firefox_service,
                                        options=selenium_config.firefox_options)
             break
         except:
@@ -81,15 +81,16 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     return data_frame, court, "success"
 
 
-def get_links(link_config: dict) -> tuple[DataFrame, str]:
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts linked cases and case_uid"""
     retries = 0
+    firefox_service = Service(GeckoDriverManager(version=selenium_config.gecko_version).install())
     while True:
         retries += 1
         if retries > 4:
-            return DataFrame(), "failure"
+            return DataFrame(), link_config, "failure"
         try:
-            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+            driver = webdriver.Firefox(service=firefox_service,
                                        options=selenium_config.firefox_options)
             break
         except:
@@ -100,7 +101,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
         retries += 1
         if retries > 4:
             driver.close()
-            return DataFrame(), "failure"
+            return DataFrame(), link_config, "failure"
         try:
             driver.get(link_config["case_link"])
             html = driver.page_source
@@ -129,4 +130,4 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
             "is_primary": [True, ],
             }
     result = DataFrame(data)
-    return result, "success"
+    return result, link_config, "success"

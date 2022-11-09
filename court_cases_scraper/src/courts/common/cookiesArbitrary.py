@@ -1,10 +1,10 @@
-import random
 import time
-from loguru import logger
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service as ChromeService
 from courts.utils.utilities import singleton, threadsafe_function
 from selenium import webdriver
+
+from courts.config import selenium_config as reloaded_selenium_config
 
 
 @singleton
@@ -58,48 +58,13 @@ class CookiesArbitrary:
 
     def refresh_cookies(self) -> None:
         """opens new page to get cookies for api requests"""
-        user_agents = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0",
-                       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-                       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 OPR/91.0.4516.77 (Edition Yx 05)",
-                       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.42",
-                       "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/105.0",
-                       "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-                       "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 OPR/91.0.4516.77 (Edition Yx 05)",
-                       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) Gecko/20100101 Firefox/105.0",
-                       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36",
-                       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 OPR/91.0.4516.77 (Edition Yx 05)",
-                       ]
 
-        self.__user_agent = user_agents[random.randrange(0, len(user_agents))]
+        self.__user_agent = reloaded_selenium_config.user_agent
 
-        accept_languages = ["ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
-                            "en-US,en;q=0.9",
-                            "en-US,fr-CA",
-                            ]
-        accept_language = accept_languages[random.randrange(0, len(accept_languages))]
-
-        resolutions = ["1280,800", "1280,960", "1280,1024", "1440,900", "1440,1080", "1600,1200", "1920,1080",
-                       "1920,1200"]
-
-        resolution = resolutions[random.randrange(0, len(resolutions))]
-
-        logger.debug("Loading new cookie for arbitr courts. Starting chrome.")
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--user-agent=" + self.__user_agent)
-        chrome_options.add_argument("--incognito")
-        chrome_options.add_argument("--disable-plugins-discovery")
-        chrome_options.add_argument("--disable-features=UserAgentClientHint")
-        chrome_options.add_argument("window-size=" + resolution)
-        chrome_prefs = {"intl.accept_languages": accept_language}
-        chrome_options.add_experimental_option("useAutomationExtension", False)
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option("prefs", chrome_prefs)
-        chrome_service = ChromeService(ChromeDriverManager().install())
+        chrome_service = ChromeService(ChromeDriverManager(version=reloaded_selenium_config.chrome_version).install())
         while True:
             try:
-                driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+                driver = webdriver.Chrome(service=chrome_service, options=reloaded_selenium_config.chrome_options)
                 break
             except Exception as ce:
                 time.sleep(3)

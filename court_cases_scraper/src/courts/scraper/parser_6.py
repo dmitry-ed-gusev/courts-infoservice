@@ -9,10 +9,8 @@ import random
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config
-from court_cases_scraper.src.courts.config import selenium_config
+from courts.config import scraper_config, selenium_config
 from courts.db.db_tools import convert_data_to_df
-from courts.utils.utilities import threadsafe_function
 from courts.web.web_client import WebClient
 
 
@@ -77,14 +75,14 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     return data_frame, court, "success"
 
 
-def get_links(link_config: dict) -> tuple[DataFrame, str]:
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts linked cases and case_uid"""
     session = WebClient()
     logger.debug(link_config["case_link"])
     try:
         page = session.get(link_config["case_link"])
     except:
-        return DataFrame(), "failure"
+        return DataFrame(), link_config, "failure"
 
     soup = BeautifulSoup(page.content, 'html.parser')
     rows = soup.find_all("tr")
@@ -108,4 +106,4 @@ def get_links(link_config: dict) -> tuple[DataFrame, str]:
             "is_primary": [True, ],
             }
     result = DataFrame(data)
-    return result, "success"
+    return result, link_config, "success"
