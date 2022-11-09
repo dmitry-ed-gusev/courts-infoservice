@@ -7,7 +7,7 @@
         - (.env support) https://github.com/theskumar/python-dotenv
 
     Created:  Sokolov Sergei, 01.10.2022
-    Modified: Dmitrii Gusev, 05.11.2022
+    Modified: Dmitrii Gusev, 09.11.2022
 """
 
 import os
@@ -20,8 +20,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from pymysql.connections import Connection
 from pymysql.cursors import Cursor
-from courts.info.config import bot_config
-from courts.info import VERSION
+from courts.bot.config import bot_config
+from courts.bot import VERSION
 
 # Enable logging
 # todo: implement logger config

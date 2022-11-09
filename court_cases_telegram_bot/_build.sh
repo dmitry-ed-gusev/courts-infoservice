@@ -8,7 +8,7 @@
 #   system shell) and from the pipenv environment as well (pipenv shell).
 #
 #   Created:  Dmitrii Gusev, 05.11.2022
-#   Modified:
+#   Modified: Dmitrii Gusev, 10.11.2022
 #
 ###############################################################################
 
@@ -37,11 +37,8 @@ rm -r ${DIST_DIR} || printf "%s doesn't exist!\n" ${DIST_DIR}
 # -- clean caches and sync + lock pipenv dependencies (update from the file Pipfile.lock)
 printf "\nCleaning pipenv cache and update dependencies.\n"
 pipenv clean ${VERBOSE}
+# todo: we can use key --outdated - ?
 pipenv update ${VERBOSE}
-
-# -- update outdated dependencies (optional)
-# todo: do we need update outdated?
-#pipenv update --outdated
 
 # -- run pytest with pytest-cov (see pytest.ini/setup.cfg - additional parameters)
 # printf "\nExecuting tests.\n"
