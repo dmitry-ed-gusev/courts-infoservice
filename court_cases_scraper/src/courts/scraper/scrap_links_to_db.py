@@ -12,7 +12,7 @@ from datetime import datetime
 from loguru import logger
 from courts.db import db_tools
 from courts.config.scraper_config import SCRAPER_CONFIG
-from courts.scraper import parser_1, parser_2, parser_3, parser_4, parser_5, parser_6, parser_8
+from courts.scraper import parser_1, parser_2, parser_3, parser_4, parser_5, parser_6, parser_8, parser_9
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 from courts.utils.utilities import threadsafe_function
 
@@ -54,6 +54,8 @@ def scrap_links_no_parallel(links_config: list[dict[str, str | datetime]], db_co
             result_part, _, status = parser_6.get_links(link_config)
         elif link_config["parser_type"] == "8":
             result_part, _, status = parser_8.get_links(link_config)
+        elif link_config["parser_type"] == "9":
+            result_part, _, status = parser_9.get_links(link_config)
         else:
             continue
         result = concat([result, result_part], ignore_index=True)
@@ -65,13 +67,13 @@ def scrap_links_no_parallel(links_config: list[dict[str, str | datetime]], db_co
 def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[str, str]):
     """router with parallel execution"""
     futures = []  # list to store future results of threads
-    executor1 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[1]["workers_count"])
-    executor2 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[2]["workers_count"])
-    executor3 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[3]["workers_count"] * 2)
-    executor4 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[4]["workers_count"])
-    executor5 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[5]["workers_count"])
-    executor6 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[6]["workers_count"])
-    executor8 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[8]["workers_count"] * 2)
+    executor1 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[1]["links_workers_count"])
+    executor2 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[2]["links_workers_count"])
+    executor3 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[3]["links_workers_count"])
+    executor4 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[4]["links_workers_count"])
+    executor5 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[5]["links_workers_count"])
+    executor6 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[6]["links_workers_count"])
+    executor8 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[8]["links_workers_count"])
     for link_config in links_config:
         if link_config["parser_type"] == "1":
             future = executor1.submit(parser_1.get_links, link_config)
@@ -87,6 +89,8 @@ def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[s
             future = executor6.submit(parser_6.get_links, link_config)
         elif link_config["parser_type"] == "8":
             future = executor8.submit(parser_8.get_links, link_config)
+        elif link_config["parser_type"] == "9":
+            future = executor8.submit(parser_9.get_links, link_config)
         else:
             continue
         futures.append(future)
@@ -159,10 +163,10 @@ def main() -> None:
                  "passwd": os.environ["MYSQL_PASS"],
                  "db": os.environ["MYSQL_DB"]
                  }
-    for i in range(1, 10):
-        links_config = db_tools.read_links_config(db_config)
-        db_tools.clean_stage_links_table(db_config)
-        scrap_links(links_config, db_config)
+    # for i in range(1, 10):
+    links_config = db_tools.read_links_config(db_config)
+    db_tools.clean_stage_links_table(db_config)
+    scrap_links(links_config, db_config)
     # scrap_links_no_parallel(links_config, db_config)
 
 

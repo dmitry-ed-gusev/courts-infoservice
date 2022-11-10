@@ -12,7 +12,7 @@ from loguru import logger
 from courts.db import db_tools
 from courts.config.scraper_config import SCRAPER_CONFIG
 from courts.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5, parser_6,
-                            parser_7, parser_8)
+                            parser_7, parser_8, parser_9)
 from concurrent.futures import ThreadPoolExecutor, as_completed, Future
 from courts.utils.utilities import threadsafe_function
 
@@ -57,6 +57,8 @@ def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_
             result_part, court_config, status = parser_7.parse_page(court)
         elif court["parser_type"] == "8":
             result_part, court_config, status = parser_8.parse_page(court)
+        elif court["parser_type"] == "9":
+            result_part, court_config, status = parser_9.parse_page(court)
         else:
             continue
         result_len = len(result_part)
@@ -103,6 +105,8 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
             future = executor7.submit(parser_7.parse_page, court)
         elif court["parser_type"] == "8":
             future = executor8.submit(parser_8.parse_page, court)
+        elif court["parser_type"] == "9":
+            future = executor8.submit(parser_9.parse_page, court)
         else:
             continue
         futures.append(future)

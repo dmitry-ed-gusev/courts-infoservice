@@ -164,6 +164,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             break
         try:
             req_driver.close()
+            req_driver.quit()
             break
         except:
             time.sleep(3)
@@ -188,6 +189,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         retries += 1
         if retries > 4:
             driver.close()
+            driver.quit()
             return DataFrame(), link_config, "failure"
         try:
             driver.get(link_config["case_link"])
@@ -206,6 +208,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         soup = BeautifulSoup(html, "html.parser")
         if retries > 4:
             driver.close()
+            driver.quit()
             return DataFrame(), link_config, "failure"
             # if link is not valid anymore
         if "Ошибка 404" in html:
@@ -214,6 +217,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
                     }
             result = DataFrame(data)
             driver.close()
+            driver.quit()
             return result, link_config, "success"
     result = []
     rows = soup.find_all("div", id="b-case-header")
@@ -268,6 +272,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
                                 "link_case_num": linked_number_1.strip(),
                                 }
                     result.append(data_row)
-
+    driver.close()
+    driver.quit()
     result_df = DataFrame(result)
     return result_df, link_config, "success"

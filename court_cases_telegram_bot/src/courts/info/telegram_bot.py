@@ -104,7 +104,7 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                             or dm.court_alias like '%%'|| %(court)s ||'%%'
                             or lower(dm.court) like '%%'|| %(court)s ||'%%'
                         )
-                        and (nlog.row_hash is null or nlog.row_hash <> dm.row_hash)
+                        and (nlog.record_id is null or nlog.record_id < dm.row_hash)
                         and dm.load_dttm > %(sub_dttm)s
                     order by dm.check_date desc
                     limit %(limit)s
@@ -117,12 +117,12 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                 message = form_message_from_db_response(row)
                 await context.bot.send_message(subscription[0], text=message)
                 cursor.execute("""insert into config_telegram_bot_notification_log 
-                                (account_id, case_num, check_date, court_alias, order_num, row_hash, send_dttm)
+                                (account_id, case_num, check_date, court_alias, order_num, record_id, send_dttm)
                                 values (%(account_id)s, %(case_num)s, %(check_date)s, 
-                                    %(court_alias)s, %(order_num)s, %(row_hash)s, now())""",
+                                    %(court_alias)s, %(order_num)s, %(record_id)s, now())""",
                                {"account_id": str(subscription[0]), "case_num": str(subscription[1]),
                                 "check_date": row[1], "court_alias": row[14],
-                                "order_num": row[3], "row_hash": row[13]})
+                                "order_num": row[3], "record_id": row[13]})
                 conn.commit()
     cursor.close()
     conn.close()

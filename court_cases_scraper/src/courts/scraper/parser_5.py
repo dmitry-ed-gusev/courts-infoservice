@@ -39,6 +39,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             time.sleep(random.randrange(0, 3))
             if retries > 4:
                 driver.close()
+                driver.quit()
                 return DataFrame(), court, "failure"
             try:
                 driver.get(url)
@@ -99,6 +100,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     time.sleep(3)
 
     driver.close()
+    driver.quit()
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[5]["stage_mapping"])
     return data_frame, court, "success"
 
@@ -123,11 +125,13 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         retries += 1
         if retries > 4:
             driver.close()
+            driver.quit()
             return DataFrame(), link_config, "failure"
         try:
             driver.get(link_config["case_link"])
             html = driver.page_source
             driver.close()
+            driver.quit()
             break
         except:
             None

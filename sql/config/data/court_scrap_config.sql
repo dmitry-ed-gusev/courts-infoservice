@@ -233,3 +233,6 @@ insert into config_court_scrap_config (link, title, alias, skip, server_num, par
 insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'Суд по интеллектуальным правам', 'arbitr-sip', False, 'SIP', '8', '20:00');
 insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС города Санкт-Петербурга и Ленинградской области', 'arbitr-spb', False, 'SPB', '8', '20:00');
 insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://rad.arbitr.ru', 'АС Краснодарского края', 'arbitr-krd', False, 'KRASNODAR', '8', '20:00');
+
+--vsrf
+insert into config_court_scrap_config (link, title, alias, skip, server_num, parser_type, refresh_time) values ('https://vsrf.ru', 'Верховный суд РФ', 'vsrf', False, '1', '1', '20:00');

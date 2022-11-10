@@ -3,7 +3,6 @@ import time
 import random
 import re
 
-import requests
 from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
@@ -76,8 +75,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
 
 def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts linked cases and case_uid"""
-    session = requests.Session()
+    session = WebClient(dont_raise_for=[404, ])
+    session.headers = {"user-agent": scraper_config.USER_AGENT}
     logger.debug(link_config["case_link"])
+    time.sleep(1)
     try:
         page = session.get(link_config["case_link"])
     except Exception as e:

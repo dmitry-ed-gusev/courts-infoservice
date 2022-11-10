@@ -33,6 +33,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         retries += 1
         if retries > 4:
             driver.close()
+            driver.quit()
             return DataFrame(), court, "failure"
         try:
             driver.get(url)
@@ -71,6 +72,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
     driver.close()
+    driver.quit()
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[6]["stage_mapping"])
     return data_frame, court, "success"
 
