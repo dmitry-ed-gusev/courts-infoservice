@@ -9,17 +9,16 @@ from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config
-from court_cases_scraper.src.courts.config import selenium_config
+from courts.config import scraper_config, selenium_config
 from courts.db.db_tools import convert_data_to_df
 
 
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses mos sud page with paging"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
+    firefox_service = Service(GeckoDriverManager(version=selenium_config.gecko_version).install())
     while True:
         try:
-            firefox_service = Service(GeckoDriverManager().install())
             driver = webdriver.Firefox(service=firefox_service,
                                        options=selenium_config.firefox_options)
             break
@@ -39,6 +38,8 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             retries += 1
             time.sleep(random.randrange(0, 3))
             if retries > 4:
+                driver.close()
+                driver.quit()
                 return DataFrame(), court, "failure"
             try:
                 driver.get(url)
@@ -99,6 +100,54 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     time.sleep(3)
 
     driver.close()
+    driver.quit()
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[5]["stage_mapping"])
     return data_frame, court, "success"
 
+
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
+    """extracts linked cases and case_uid"""
+    logger.debug(link_config["case_link"])
+    retries = 0
+    firefox_service = Service(GeckoDriverManager(version=selenium_config.gecko_version).install())
+    while True:
+        retries += 1
+        if retries > 4:
+            return DataFrame(), link_config, "failure"
+        try:
+            driver = webdriver.Firefox(service=firefox_service,
+                                       options=selenium_config.firefox_options)
+            break
+        except Exception as ee:
+            time.sleep(3)
+    retries = 0
+    while True:
+        retries += 1
+        if retries > 4:
+            driver.close()
+            driver.quit()
+            return DataFrame(), link_config, "failure"
+        try:
+            driver.get(link_config["case_link"])
+            html = driver.page_source
+            driver.close()
+            driver.quit()
+            break
+        except:
+            None
+
+    soup = BeautifulSoup(html, 'html.parser')
+    rows = soup.find_all("div", class_="row_card")
+    case_uid = ""
+    for row in rows:
+        cols = row.find_all("div")
+        if cols[0].text.strip() == "Уникальный идентификатор дела":
+            case_uid = cols[1].text.strip()
+            break
+
+    data = {"case_link": [link_config["case_link"], ],
+            "case_num": [link_config["case_num"], ],
+            "case_uid": [case_uid, ],
+            }
+    result = DataFrame(data)
+    return result, link_config, "success"
