@@ -2,6 +2,7 @@
 import time
 import random
 import re
+
 from bs4 import BeautifulSoup
 from loguru import logger
 from pandas import DataFrame
@@ -72,3 +73,29 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     return data_frame, court, "success"
 
 
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
+    """extracts linked cases and case_uid"""
+    session = WebClient(dont_raise_for=[404, ])
+    session.headers = {"user-agent": scraper_config.USER_AGENT}
+    logger.debug(link_config["case_link"])
+    time.sleep(1)
+    try:
+        page = session.get(link_config["case_link"])
+    except Exception as e:
+        return DataFrame(), link_config, "failure"
+
+    soup = BeautifulSoup(page.content, 'html.parser')
+    rows = soup.find_all("div", class_="row_card")
+    case_uid = None
+    for row in rows:
+        cols = row.find_all("div")
+        if len(cols) != 2:
+            continue
+        if cols[0].text.strip() == "Уникальный идентификатор дела":
+            case_uid = cols[1].text.strip()
+    data = {"case_link": [link_config["case_link"], ],
+            "case_num": [link_config["case_num"], ],
+            "case_uid": [case_uid, ],
+            }
+    result = DataFrame(data)
+    return result, link_config, "success"

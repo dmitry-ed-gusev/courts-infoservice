@@ -6,7 +6,7 @@ case_num varchar(255),
 check_date date,
 court_alias varchar(50),
 order_num int,
-row_hash varchar(50),
+record_id int,
 send_dttm timestamp
 );
 

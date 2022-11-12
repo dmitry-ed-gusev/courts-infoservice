@@ -53,15 +53,17 @@ class Config():
 
 
 MAX_RETRIES = 5
-RANGE_BACKWARD = 14
+RANGE_BACKWARD = 30
 RANGE_FORWARD = 45
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko) Chrome/22.0.1216.0 Safari/537.2"
 
 STAGE_TABLE = "stage_stg_court_cases"
+LINKS_STAGE_TABLE = "stage_stg_case_links"
 
 SCRAPER_CONFIG = {
-    1: {"workers_count": 8,
+    1: {"workers_count": 7,
+        "links_workers_count": 7,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -78,6 +80,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     2: {"workers_count": 5,
+        "links_workers_count": 4,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -94,6 +97,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     3: {"workers_count": 1,
+        "links_workers_count": 3,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -111,6 +115,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     4: {"workers_count": 2,
+        "links_workers_count": 2,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -122,7 +127,8 @@ SCRAPER_CONFIG = {
                           {"name": "case_link", "mapping": "case_link"},
                           ]
         },
-    5: {"workers_count": 3,
+    5: {"workers_count": 5,
+        "links_workers_count": 5,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -138,6 +144,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     6: {"workers_count": 1,
+        "links_workers_count": 1,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -167,6 +174,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     8: {"workers_count": 1,
+        "links_workers_count": 3,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -177,6 +185,19 @@ SCRAPER_CONFIG = {
                           {"name": "case_info", "mapping": "case_info"},
                           {"name": "case_link", "mapping": "case_link"},
                           {"name": "judge", "mapping": "judge"},
+                          ]
+        },
+    9: {"workers_count": 1,
+        "links_workers_count": 3,
+        "stage_mapping": [{"name": "court", "mapping": "court"},
+                          {"name": "court_alias", "mapping": "court_alias"},
+                          {"name": "check_date", "mapping": "check_date"},
+                          {"name": "case_num", "mapping": "case_num"},
+                          {"name": "section_name", "mapping": "section_name"},
+                          {"name": "hearing_time", "mapping": "hearing_time"},
+                          {"name": "hearing_place", "mapping": "hearing_place"},
+                          {"name": "case_info", "mapping": "case_info"},
+                          {"name": "case_link", "mapping": "case_link"},
                           ]
         },
 }

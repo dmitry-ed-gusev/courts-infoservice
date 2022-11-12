@@ -9,13 +9,11 @@ import random
 from loguru import logger
 from pandas import DataFrame
 
-from courts.config import scraper_config
-from court_cases_scraper.src.courts.config import selenium_config
+from courts.config import scraper_config, selenium_config
 from courts.db.db_tools import convert_data_to_df
-from courts.utils.utilities import threadsafe_function
+from courts.web.web_client import WebClient
 
 
-@threadsafe_function
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output js page"""
     result = []
@@ -34,6 +32,8 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         time.sleep(random.randrange(0, 3))
         retries += 1
         if retries > 4:
+            driver.close()
+            driver.quit()
             return DataFrame(), court, "failure"
         try:
             driver.get(url)
@@ -72,5 +72,40 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
     driver.close()
+    driver.quit()
     data_frame = convert_data_to_df(result, scraper_config.SCRAPER_CONFIG[6]["stage_mapping"])
     return data_frame, court, "success"
+
+
+def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
+    """extracts linked cases and case_uid"""
+    session = WebClient()
+    logger.debug(link_config["case_link"])
+    try:
+        page = session.get(link_config["case_link"])
+    except:
+        return DataFrame(), link_config, "failure"
+
+    soup = BeautifulSoup(page.content, 'html.parser')
+    rows = soup.find_all("tr")
+    case_uid = link_case_num = link_court_name = None
+    for row in rows:
+        cols = row.find_all("td")
+        if len(cols) != 2:
+            continue
+        if cols[0].text.strip() == "Уникальный идентификатор дела":
+            case_uid = cols[1].text.strip()
+        if cols[0].text.strip() == "Номер дела в первой инстанции":
+            link_case_num = cols[1].text.strip()
+        if cols[0].text.strip() == "Суд (судебный участок) первой инстанции":
+            link_court_name = cols[1].text.strip()
+    data = {"case_link": [link_config["case_link"], ],
+            "case_num": [link_config["case_num"], ],
+            "case_uid": [case_uid, ],
+            "link_case_num": [link_case_num, ],
+            "link_court_name": [link_court_name, ],
+            "link_level": ["1", ],
+            "is_primary": [True, ],
+            }
+    result = DataFrame(data)
+    return result, link_config, "success"
