@@ -74,6 +74,7 @@ def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[s
     executor5 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[5]["links_workers_count"])
     executor6 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[6]["links_workers_count"])
     executor8 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[8]["links_workers_count"])
+    executor9 = ThreadPoolExecutor(max_workers=SCRAPER_CONFIG[9]["links_workers_count"])
     for link_config in links_config:
         if link_config["parser_type"] == "1":
             future = executor1.submit(parser_1.get_links, link_config)
@@ -90,7 +91,7 @@ def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[s
         elif link_config["parser_type"] == "8":
             future = executor8.submit(parser_8.get_links, link_config)
         elif link_config["parser_type"] == "9":
-            future = executor8.submit(parser_9.get_links, link_config)
+            future = executor9.submit(parser_9.get_links, link_config)
         else:
             continue
         futures.append(future)
@@ -163,11 +164,13 @@ def main() -> None:
                  "passwd": os.environ["MYSQL_PASS"],
                  "db": os.environ["MYSQL_DB"]
                  }
-    # for i in range(1, 10):
-    links_config = db_tools.read_links_config(db_config)
-    db_tools.clean_stage_links_table(db_config)
-    scrap_links(links_config, db_config)
-    # scrap_links_no_parallel(links_config, db_config)
+    while True:
+        links_config = db_tools.read_links_config(db_config)
+        if len(links_config) == 0:
+            break
+        db_tools.clean_stage_links_table(db_config)
+        scrap_links(links_config, db_config)
+        # scrap_links_no_parallel(links_config, db_config)
 
 
 if __name__ == "__main__":

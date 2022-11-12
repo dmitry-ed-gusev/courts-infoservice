@@ -65,11 +65,11 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             for section in item.find_all("div", attrs={"data-mark-from-name": "departmentId"}):
                 section_name = section.text.strip()
             # case_num and case_link
-            for case_number in item.find_all("a", attrs={"data-toggle": "tooltip"}):
+            for case_number in item.find_all("div", class_="col-md-3 col-sm-3 col-xs-3 vs-items-label"):
                 result_row["case_num"] = case_number.text.strip()
-                if case_number.get("href"):
-                    if str(case_number["href"]).startswith("/lk"):
-                        result_row["case_link"] = court.get("link") + case_number["href"]
+                for link in case_number.find_all("a"):
+                    if str(link["href"]).startswith("/lk"):
+                        result_row["case_link"] = court.get("link") + link["href"]
                     else:
                         skip = True
             # skip rows from kad.arbitr.ru
@@ -124,8 +124,17 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
             if col.find("div", class_="col-md-3") and (
                     col.find("div", class_="col-md-3").text.strip() == "Суд 1-ой инстанции:"):
                 for first_instance in col.find_all("div", class_="col-md-7 vs-items-additional-info"):
-                    link_court_name = first_instance.text.split("(")[0].strip(".")
-                    link_case_num = first_instance.text.split("Номер дела 1-ой инстанции:")[1].strip()
+                    if "Номер дела 1-ой инстанции:" in first_instance.text:
+                        link_court_name = first_instance.contents[0].text.split("(")[0].replace("\n", " ")
+                        link_court_name = link_court_name.split("Приговор")[0]
+                        link_court_name = link_court_name.split("Решение")[0]
+                        link_court_name = link_court_name.split("Определение")[0]
+                        link_court_name = re.sub("\s+", " ", link_court_name).strip(". ")
+                        link_case_num = first_instance.contents[0].text.split("Номер дела 1-ой инстанции:")[1].replace("\n", " ")
+                        link_case_num = re.sub("\s+", " ", link_case_num).strip()
+                    else:
+                        link_case_num = None
+                        link_court_name = None
                     break
 
     data = {"case_link": [link_config["case_link"], ],

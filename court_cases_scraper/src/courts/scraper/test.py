@@ -19,7 +19,7 @@ from courts.scraper import (parser_1,
                             )
 
 test_mode = 109
-check_date = "08.11.2022"
+check_date = "13.12.2022"
 check_date_dt = datetime.strptime(check_date, "%d.%m.%Y")
 
 # Load environment variables from .env file from the project root dir
@@ -97,7 +97,7 @@ match test_mode:
                        "case_num": "some_case_num"}
         result, _, status = parser_8.get_links(link_config)
     case 109:
-        link_config = {"case_link": "https://vsrf.ru/lk/practice/cases/11579549#11579549",
+        link_config = {"case_link": "https://vsrf.ru/lk/practice/cases/11582039#11582039",
                        "case_num": "some_case_num"}
         result, _, status = parser_9.get_links(link_config)
     case _:

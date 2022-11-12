@@ -80,7 +80,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     2: {"workers_count": 5,
-        "links_workers_count": 3,
+        "links_workers_count": 4,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},
@@ -187,7 +187,7 @@ SCRAPER_CONFIG = {
                           {"name": "judge", "mapping": "judge"},
                           ]
         },
-    9: {"workers_count": 3,
+    9: {"workers_count": 1,
         "links_workers_count": 3,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},

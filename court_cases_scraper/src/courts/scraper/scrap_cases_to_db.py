@@ -176,8 +176,8 @@ def main() -> None:
                  }
     courts_config = db_tools.read_courts_config(db_config)
     db_tools.clean_stage_courts_table(db_config)
-    scrap_courts(courts_config, db_config)
-    # scrap_courts_no_parallel(courts_config, db_config)
+    # scrap_courts(courts_config, db_config)
+    scrap_courts_no_parallel(courts_config, db_config)
 
 
 if __name__ == "__main__":
