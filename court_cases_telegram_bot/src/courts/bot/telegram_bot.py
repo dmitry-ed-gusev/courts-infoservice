@@ -25,12 +25,15 @@ from courts.bot import VERSION
 
 # Enable logging
 # todo: implement logger config
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# useful constants
+# environment file to load (default fallback)
 # ENV_SETTINGS_FILE = ".env.local"
-ENV_SETTINGS_FILE = ".env"
+ENV_SETTINGS_FILE = ".env.prod"
+
+# environment variable for environment file name to load
+ENV_VAR_FOR_SETTINGS_FILE = "COURTS_BOT_SETTINGS"
 
 
 def form_message_from_db_response(row) -> str:
@@ -289,13 +292,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-def main() -> None:
+def main():
     """Run the bot."""
 
     logger.info("Starting [Courts Info Service:: Telegram Bot].")
 
     # Load environment variables from .env_hosting file from the project root dir
-    load_dotenv(dotenv_path=ENV_SETTINGS_FILE, verbose=True)
+    config_file: str = os.getenv(ENV_VAR_FOR_SETTINGS_FILE, '')  # try to get config value from env variable
+    if not config_file:  # no env variable - fall back to default
+        config_file = ENV_SETTINGS_FILE
+    logger.debug(f"Using environment config: {config_file}")
+    logger.debug(f"Current working dir: {os.getcwd()}")
+    load_dotenv(dotenv_path=config_file, verbose=True)
 
     # debug output for loaded variables
     logger.info(f"Loaded environment variables:\n"

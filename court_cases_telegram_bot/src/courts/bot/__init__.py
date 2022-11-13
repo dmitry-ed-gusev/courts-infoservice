@@ -1,3 +1,9 @@
-import time
+# try:
+#     with open('build.timestamp', mode='r') as infile:
+#         datetime = infile.read()
+# except IOError:
+#     datetime = '*'
+# VERSION = f"v1.0.0-ts{datetime}"
+# VERSION = "v1.0.0.ts{}".format(datetime)
 
-VERSION = f"1.0.0-ts{str(round(time.time()))}"
+VERSION = "v1.0.0"
