@@ -7,8 +7,9 @@
 ## General Improvements
 
 1. ~~General: load_dotenv - в боте пароль попадает прямо в лог. надо сделать маскирование, как для токена~~
-2. General: init db питон скрипт. список скриптов в db_init_config.py. в db_tools уже есть метод для этого, 
+2. General: init db питон скрипт. список скриптов в db_init_config.py. в db_tools уже есть метод для этого,
    можно туда положить
+3. extract utility methods into external library - use [pyutilities]
 
 ## Database Improvements
 

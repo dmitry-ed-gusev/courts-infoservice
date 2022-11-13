@@ -8,7 +8,7 @@
 #   system shell) and from the pipenv environment as well (pipenv shell).
 #
 #   Created:  Dmitrii Gusev, 05.11.2022
-#   Modified:
+#   Modified: Dmitrii Gusev, 13.11.2022
 #
 ###############################################################################
 
@@ -22,26 +22,32 @@ export LANG="en_US.UTF-8"
 # -- build directories
 BUILD_DIR='build/'
 DIST_DIR='dist/'
+# -- timestamp file name
+TIMESTAMP_FILE='build.timestamp'
 
 clear
 printf "Building Courts Infoservice Telegram Bot...\n"
 sleep 2
 
+# -- update the build timestamp
+# datetime=$(date "+%Y.%m.%d_%H.%M.%S")
+# create UNIX timestamp
+datetime=$(date "+%s")
+echo "${datetime}" > ${TIMESTAMP_FILE}
+
 # -- clean build and distribution folders
 printf "\nClearing temporary directories.\n"
 printf "\nDeleting [%s]...\n" ${BUILD_DIR}
 rm -r ${BUILD_DIR} || printf "%s doesn't exist!\n" ${BUILD_DIR}
-printf "\nDeleting [%s]...\n" ${BUILD_DIR}
+printf "\nDeleting [%s]...\n" ${DIST_DIR}
 rm -r ${DIST_DIR} || printf "%s doesn't exist!\n" ${DIST_DIR}
 
 # -- clean caches and sync + lock pipenv dependencies (update from the file Pipfile.lock)
+# todo: do we need this clean/update for build?
 printf "\nCleaning pipenv cache and update dependencies.\n"
 pipenv clean ${VERBOSE}
+# todo: we can use key --outdated - ?
 pipenv update ${VERBOSE}
-
-# -- update outdated dependencies (optional)
-# todo: do we need update outdated?
-#pipenv update --outdated
 
 # -- run pytest with pytest-cov (see pytest.ini/setup.cfg - additional parameters)
 # printf "\nExecuting tests.\n"
@@ -65,6 +71,6 @@ pipenv update ${VERBOSE}
 
 # -- build two distributions: binary (whl) and source (tar.gz)
 printf "\nBuilding distribution for Telegram Bot.\n"
-pipenv run python -m build
+pipenv run python -m build -s
 
 printf "\nBuild finished.\n"
