@@ -1,30 +1,41 @@
-# courts-infoservice
+# Courts Info Service (CIS)
+
+*Sergei Sokolov & Dmitrii Gusev, (C) 2022-2023*
+
 
 ## Project Structure
 
-### Data Scraper
+CIS project consists of several modules:
 
-TBD
+- Data Scraper and Parser
+- Telegram Bot
+- Web UI
+
+See detailed descriptions of the mentioned modules below.
+
+### Data Scraper and Parser
+
+See detailed info [here](/court_cases_scraper/SCRAPER.md)
 
 ### Telegram Bot
 
-TBD
+See detailed info [here](/court_cases_telegram_bot/TELE-BOT.md)
 
 ### Web UI
 
-TBD
+See detailed info [here](/court_cases_web-ui/WEB-UI.md)
 
 ## Project Technical Details
 
-### Architecture
+### Project Architecture
 
 TBD
 
-### TODO items
+### Project's TODO
 
 Project TODO items can be fund [here](TODO.md).
 
-## Useful Resources
+## Useful Resources / Links
 
 - [favicon](https://favicon.io/)
 - ???
