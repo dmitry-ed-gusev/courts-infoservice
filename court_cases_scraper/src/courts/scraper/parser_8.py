@@ -198,7 +198,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
             break
         except:
             None
-
+    driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
     # waiting for scripts to complete
     retries = 0
     while len(soup.find_all("div", id="b-case-header")) == 0:

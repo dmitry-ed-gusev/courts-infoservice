@@ -25,6 +25,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             break
         except:
             time.sleep(3)
+    driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
     url = court.get("link") + "/modules.php?name=sud_delo&srv_num=" + court.get("server_num") + "&H_date=" + check_date
     logger.debug(url)
     retries = 0

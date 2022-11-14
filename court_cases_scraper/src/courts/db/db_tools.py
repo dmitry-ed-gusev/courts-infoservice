@@ -228,6 +228,26 @@ def load_links_to_dm(db_config: dict[str, str]) -> None:
     logger.debug("Merge to DM completed.")
 
 
+def deactivate_outdated_bot_log_entries(db_config: dict[str, str], court_alias: str, check_date: datetime) -> None:
+    """calls log deactivation procedure"""
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+
+    logger.debug("Connected. Deactivating tg bot log entries.")
+    connection = engine.connect()
+    sql = sa_text("call config_p_deactivate_outdated_tg_bot_log_entries(:court_alias, :check_date)")
+    params = {"court_alias": court_alias, "check_date": check_date}
+    connection.execute(sql, params)
+    connection.commit()
+    connection.close()
+    logger.debug("Deactivation tg bot log entries completed.")
+
+
 def convert_data_to_df(data: list[dict[str, str]], stage_mapping: list[dict[str, str]]) -> DataFrame:
     values = []
     for idx_r, row in enumerate(data):
