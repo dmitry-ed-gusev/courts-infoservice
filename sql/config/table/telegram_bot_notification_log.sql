@@ -6,7 +6,8 @@ case_num varchar(255),
 check_date date,
 court_alias varchar(50),
 order_num int,
-record_id int,
-send_dttm timestamp
+row_hash varchar(50),
+send_dttm timestamp,
+inactive_flag boolean not null default false
 );
 

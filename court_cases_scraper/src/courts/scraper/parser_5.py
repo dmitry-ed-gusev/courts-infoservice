@@ -120,6 +120,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
             break
         except Exception as ee:
             time.sleep(3)
+    driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
     retries = 0
     while True:
         retries += 1

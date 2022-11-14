@@ -25,9 +25,9 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             break
         except:
             time.sleep(3)
+    driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
     result = []
     section_name = ""
-
     url = court.get(
         "link") + "/lk/practice/hearings?&numberExact=true&eventDateExact=true&eventDateFrom=" + check_date
     logger.debug(url)
