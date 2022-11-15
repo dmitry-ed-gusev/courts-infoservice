@@ -18,9 +18,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output js page"""
     result = []
     check_date = court.get("check_date").strftime("%d.%m.%Y")
+    firefox_service = Service(GeckoDriverManager(version=selenium_config.gecko_version).install())
     while True:
         try:
-            driver = webdriver.Firefox(service=Service(GeckoDriverManager().install()),
+            driver = webdriver.Firefox(service=firefox_service,
                                        options=selenium_config.firefox_options)
             break
         except:

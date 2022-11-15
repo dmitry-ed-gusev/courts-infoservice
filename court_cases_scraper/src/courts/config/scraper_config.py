@@ -60,7 +60,7 @@ PAGE_LOAD_TIMEOUT = 60
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko) Chrome/22.0.1216.0 Safari/537.2"
 
-STAGE_TABLE = "stage_stg_court_cases"
+STAGE_TABLE = "stage_lnd_court_cases"
 LINKS_STAGE_TABLE = "stage_stg_case_links"
 
 SCRAPER_CONFIG = {

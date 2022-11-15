@@ -129,24 +129,10 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
         if result_len > 0:
             while True:
                 try:
-                    db_tools.load_courts_to_stage(result_part, db_config)
+                    db_tools.load_courts_to_stage(result_part, db_config, court_config["alias"], court_config["check_date"])
                     break
                 except Exception as estg:
                     logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
-                    time.sleep(3)
-            while True:
-                try:
-                    db_tools.load_courts_to_dm(db_config, court_config["alias"], court_config["check_date"])
-                    break
-                except Exception as edm:
-                    logger.warning("Failed to load data to dm. Retry in 3 seconds - " + str(edm))
-                    time.sleep(3)
-            while True:
-                try:
-                    db_tools.deactivate_outdated_bot_log_entries(db_config, court_config["alias"], court_config["check_date"])
-                    break
-                except Exception as edm:
-                    logger.warning("Failed to deactivate outdated bot logs. Retry in 3 seconds - " + str(edm))
                     time.sleep(3)
         if status == "success":
             logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
@@ -182,10 +168,18 @@ def main() -> None:
                  "passwd": os.environ["MYSQL_PASS"],
                  "db": os.environ["MYSQL_DB"]
                  }
-    courts_config = db_tools.read_courts_config(db_config)
-    db_tools.clean_stage_courts_table(db_config)
-    scrap_courts(courts_config, db_config)
+    db_config_wrk = {"host": os.environ["MYSQL_HOST_WRK"],
+                     "port": os.environ["MYSQL_PORT_WRK"],
+                     "user": os.environ["MYSQL_USER_WRK"],
+                     "passwd": os.environ["MYSQL_PASS_WRK"],
+                     "db": os.environ["MYSQL_DB_WRK"]
+                     }
+    # courts_config = db_tools.read_courts_config(db_config_wrk)
+    # scrap_courts(courts_config, db_config_wrk)
     # scrap_courts_no_parallel(courts_config, db_config)
+    db_tools.etl_load_court_cases_dq(db_config_wrk)
+    db_tools.etl_load_court_cases_dv(db_config_wrk)
+    db_tools.etl_load_court_cases_dm(db_config_wrk)
 
 
 if __name__ == "__main__":

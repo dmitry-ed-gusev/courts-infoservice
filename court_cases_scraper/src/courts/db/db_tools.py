@@ -64,7 +64,7 @@ def log_scrapped_court(db_config: dict[str, str], court_alias: str, check_date: 
     connection.close()
 
 
-def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
+def etl_load_court_cases_dq(db_config: dict[str, str]) -> None:
     """calcs row hash in stage"""
     engine = create_engine("mysql+pymysql://"
                            + db_config.get("user")
@@ -74,10 +74,63 @@ def calculate_row_hash_stage(db_config: dict[str, str]) -> None:
                            + "/" + db_config.get("db")
                            + "?charset=utf8&local_infile=1")
     connection = engine.connect()
-    sql = "call stage_p_update_court_cases_row_hash()"
-    connection.execute(sa_text(sql))
+    # lnd -> stg
+    logger.info("Loading court cases data from lnd to stg.")
+    sql = sa_text("call stage_p_load_stg_court_cases()")
+    connection.execute(sql)
+    connection.commit()
+    # trying to find case_num in our dm
+    logger.info("Performing DQ tasks")
+    connection.execute(sa_text("call stage_p_update_case_num()"))
     connection.commit()
     connection.close()
+
+
+def etl_load_court_cases_dv(db_config: dict[str, str]) -> None:
+    """calcs row hash in stage"""
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+    connection = engine.connect()
+    # stg -> dv
+    logger.info("Loading court cases data from stg to dv.")
+    sql = sa_text("call dv_p_load_court_cases_h()")
+    connection.execute(sql)
+    connection.commit()
+    sql = sa_text("call dv_p_load_court_cases_l()")
+    connection.execute(sql)
+    connection.commit()
+    sql = sa_text("call dv_p_load_court_cases_ls()")
+    connection.execute(sql)
+    connection.commit()
+    connection.close()
+    logger.info("Court cases data loaded to dv.")
+
+
+def etl_load_court_cases_dm(db_config: dict[str, str]) -> None:
+    """calcs row hash in stage"""
+    engine = create_engine("mysql+pymysql://"
+                           + db_config.get("user")
+                           + ":" + db_config.get("passwd")
+                           + "@" + db_config.get("host")
+                           + ":" + db_config.get("port")
+                           + "/" + db_config.get("db")
+                           + "?charset=utf8&local_infile=1")
+    connection = engine.connect()
+    # stg -> dv
+    logger.info("Loading court cases data from dv to dm.")
+    sql = sa_text("call dm_p_load_court_cases()")
+    connection.execute(sql)
+    connection.commit()
+    sql = sa_text("call dm_p_fill_court_case_stats()")
+    connection.execute(sql)
+    connection.commit()
+    connection.close()
+    logger.info("Court cases data loaded to dm.")
 
 
 def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
@@ -146,7 +199,10 @@ def read_links_config(db_config: dict[str, str]) -> list[dict[str, str]]:
     return result
 
 
-def load_courts_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> None:
+def load_courts_to_stage(data_frame: DataFrame,
+                         db_config: dict[str, str],
+                         court_alias: str,
+                         check_date: datetime) -> None:
     """loads parsed data to stage"""
     if len(data_frame) == 0:
         return
@@ -159,14 +215,14 @@ def load_courts_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> No
                            + "?charset=utf8&local_infile=1")
     connection = engine.connect()
     logger.debug("Loading courts to stage")
+    # delete same data chunk from stage
+    sql = sa_text(
+        f"delete from {scraper_config.STAGE_TABLE} where court_alias = :court_alias and check_date = :check_date")
+    params = {"court_alias": court_alias, "check_date": check_date.strftime("%d.%m.%Y")}
+    connection.execute(sql, params)
+    connection.commit()
+    # load dataframe to stage table
     data_frame.to_sql(scraper_config.STAGE_TABLE, engine, index=False, if_exists="append")
-
-    # trying to find case_num in our dm
-    connection.execute(sa_text("call stage_p_update_case_num()"))
-    connection.commit()
-    # calculate row hash
-    connection.execute(sa_text("call stage_p_update_court_cases_row_hash()"))
-    connection.commit()
     logger.debug("Loaded " + str(len(data_frame)) + " rows to stage.")
     connection.close()
 
