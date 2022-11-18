@@ -18,7 +18,7 @@ Perform scraping necessary data from various data sources - courts web sites. Se
 
 ### Telegram Bot
 
-See detailed info [here](/court_cases_telegram_bot/TELE-BOT.md)
+Telegram Bot is the essential part of the CIS project. See detailed info [here](/telegram-bot/TELE-BOT.md)
 
 ### Web UI
 
@@ -32,9 +32,9 @@ TBD
 
 ### Project's TODO
 
-Project TODO items can be fund [here](TODO.md).
+The project is in active development, hence there are a lot of TODO items, they can be found [here](TODO.md).
 
 ## Useful Resources / Links
 
-- [favicon](https://favicon.io/)
+- ???
 - ???
