@@ -1,0 +1,1 @@
+scp file.txt username@to_host:/remote/directory/

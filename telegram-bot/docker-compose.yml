@@ -10,7 +10,7 @@
 # docker services to run
 services:
   courtsbot:
-    container_name: courtsinfo-bot-container
+    container_name: courtsbot-prod
     image: courtsbot
     build: .
     restart: unless-stopped
