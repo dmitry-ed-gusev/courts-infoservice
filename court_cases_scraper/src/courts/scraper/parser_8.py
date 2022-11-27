@@ -213,6 +213,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
             # if link is not valid anymore
         if "Ошибка 404" in html:
             data = {"case_link": [link_config["case_link"], ],
+                    "court_alias": [link_config["alias"], ],
                     "case_num": [link_config["case_num"], ],
                     }
             result = DataFrame(data)
@@ -225,6 +226,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         cols = row.find_all("span", class_="js-case-header-case_num", attrs={"data-instance_level": "1"})
         for col in cols:
             data_row = {"case_link": link_config["case_link"],
+                        "court_alias": [link_config["alias"], ],
                         "case_num": [link_config["case_num"], ],
                         "link_case_num": col.text.strip(),
                         "is_primary": True,
@@ -235,6 +237,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         cols = row.find_all("span", class_="js-case-header-case_num", attrs={"data-instance_level": "2"})
         for col in cols:
             data_row = {"case_link": link_config["case_link"],
+                        "court_alias": [link_config["alias"], ],
                         "case_num": [link_config["case_num"], ],
                         "link_case_num": col.text.strip(),
                         "is_primary": True,
@@ -245,6 +248,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         cols = row.find_all("span", class_="js-case-header-case_num", attrs={"data-instance_level": "3"})
         for col in cols:
             data_row = {"case_link": link_config["case_link"],
+                        "court_alias": [link_config["alias"], ],
                         "case_num": [link_config["case_num"], ],
                         "link_case_num": col.text.strip(),
                         "is_primary": True,
@@ -255,6 +259,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         cols = row.find_all("span", class_="js-case-header-case_num", attrs={"data-instance_level": "4,2"})
         for col in cols:
             data_row = {"case_link": link_config["case_link"],
+                        "court_alias": [link_config["alias"], ],
                         "case_num": [link_config["case_num"], ],
                         "link_case_num": col.text.strip(),
                         "is_primary": True,
@@ -268,6 +273,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
             for linked_number in linked_numbers:
                 for linked_number_1 in linked_number.split(","):
                     data_row = {"case_link": link_config["case_link"],
+                                "court_alias": [link_config["alias"], ],
                                 "case_num": [link_config["case_num"], ],
                                 "link_case_num": linked_number_1.strip(),
                                 }

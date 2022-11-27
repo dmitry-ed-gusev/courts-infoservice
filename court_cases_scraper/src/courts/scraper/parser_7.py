@@ -98,6 +98,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                         result_row["check_date"] = court.get("check_date").strftime("%d.%m.%Y")
                         result_row["court_alias"] = court.get("alias")
                         result_row["order_num"] = str(order_num)
+                        result_row["case_link"] = url
                         order_num += 1
                         result.append(result_row)
                 page_num += 1

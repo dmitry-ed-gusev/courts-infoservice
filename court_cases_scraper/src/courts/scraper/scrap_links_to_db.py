@@ -59,8 +59,15 @@ def scrap_links_no_parallel(links_config: list[dict[str, str | datetime]], db_co
         else:
             continue
         result = concat([result, result_part], ignore_index=True)
+        if len(result) > 100:
+            while True:
+                try:
+                    db_tools.load_links_to_stage(result, db_config)
+                    break
+                except Exception as estg:
+                    logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
+                    time.sleep(3)
     db_tools.load_links_to_stage(result, db_config)
-    db_tools.load_links_to_dm(db_config)
 
 
 @threadsafe_function
@@ -98,10 +105,6 @@ def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[s
     failed = 0
     result = DataFrame()
     for task in as_completed(futures):
-        running, done, total = thread_count(futures)
-        logger.info(
-            f"{running} running. {done} completed. {failed} failed. Total {total}. " + str(
-                round(done / total * 100, 2)) + "% scrapped. Temp result size " + str(len(result)) + ".")
         try:
             result_part, link_config, status = task.result()
         except Exception as ue:
@@ -114,23 +117,21 @@ def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[s
             continue
 
         result = concat([result, result_part], ignore_index=True)
-        # load each 1000 records from result
-        if len(result) > 1000:
+        logger.info(f"Result size {len(result)}")
+        # load each 500 records from result
+        if len(result) > 500:
+            running, done, total = thread_count(futures)
+            logger.info(
+                f"{running} running. {done} completed. {failed} failed. Total {total}. " + str(
+                    round(done / total * 100, 2)) + "% scrapped.")
             while True:
                 try:
                     db_tools.load_links_to_stage(result, db_config)
+                    result = DataFrame()
                     break
                 except Exception as estg:
                     logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
                     time.sleep(3)
-            while True:
-                try:
-                    db_tools.load_links_to_dm(db_config)
-                    break
-                except Exception as edm:
-                    logger.warning("Failed to load data to dm. Retry in 3 seconds - " + str(edm))
-                    time.sleep(3)
-            result = DataFrame()
 
     # final load when all runners completed
     while True:
@@ -139,13 +140,6 @@ def scrap_links(links_config: list[dict[str, str | datetime]], db_config: dict[s
             break
         except Exception as estg:
             logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
-            time.sleep(3)
-    while True:
-        try:
-            db_tools.load_links_to_dm(db_config)
-            break
-        except Exception as edm:
-            logger.warning("Failed to load data to dm. Retry in 3 seconds - " + str(edm))
             time.sleep(3)
 
 
@@ -164,13 +158,37 @@ def main() -> None:
                  "passwd": os.environ["MYSQL_PASS"],
                  "db": os.environ["MYSQL_DB"]
                  }
+    db_config_wrk = {"host": os.environ["MYSQL_HOST_WRK"],
+                     "port": os.environ["MYSQL_PORT_WRK"],
+                     "user": os.environ["MYSQL_USER_WRK"],
+                     "passwd": os.environ["MYSQL_PASS_WRK"],
+                     "db": os.environ["MYSQL_DB_WRK"]
+                     }
+    # links_config = db_tools.read_links_config(db_config_wrk)
+    # logger.info(f"Total {len(links_config)} links to scrap.")
+    # scrap_links(links_config, db_config_wrk)
+    # scrap_links_no_parallel(links_config, db_config_wrk)
     while True:
-        links_config = db_tools.read_links_config(db_config)
-        if len(links_config) == 0:
+        try:
+            db_tools.etl_load_case_links_dq(db_config_wrk)
             break
-        db_tools.clean_stage_links_table(db_config)
-        scrap_links(links_config, db_config)
-        # scrap_links_no_parallel(links_config, db_config)
+        except Exception as edm:
+            logger.warning("Failed to load data to dq. Retry in 3 seconds - " + str(edm))
+            time.sleep(3)
+    while True:
+        try:
+            db_tools.etl_load_case_links_dv(db_config_wrk)
+            break
+        except Exception as edm:
+            logger.warning("Failed to load data to dv. Retry in 3 seconds - " + str(edm))
+            time.sleep(3)
+    while True:
+        try:
+            db_tools.etl_load_case_links_dm(db_config_wrk)
+            break
+        except Exception as edm:
+            logger.warning("Failed to load data to dm. Retry in 3 seconds - " + str(edm))
+            time.sleep(3)
 
 
 if __name__ == "__main__":

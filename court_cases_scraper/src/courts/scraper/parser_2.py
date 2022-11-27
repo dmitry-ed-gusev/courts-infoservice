@@ -94,6 +94,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         if cols[0].text.strip() == "Уникальный идентификатор дела":
             case_uid = cols[1].text.strip()
     data = {"case_link": [link_config["case_link"], ],
+            "court_alias": [link_config["alias"], ],
             "case_num": [link_config["case_num"], ],
             "case_uid": [case_uid, ],
             }

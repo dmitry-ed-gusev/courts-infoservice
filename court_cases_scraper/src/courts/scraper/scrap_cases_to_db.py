@@ -63,9 +63,9 @@ def scrap_courts_no_parallel(courts_config: list[dict[str, str | datetime]], db_
             continue
         result_len = len(result_part)
         if result_len > 0:
-            db_tools.load_courts_to_stage(result_part, db_config)
-            db_tools.load_courts_to_dm(db_config, court_config["alias"], court_config["check_date"])
-            db_tools.deactivate_outdated_bot_log_entries(db_config, court_config["alias"], court_config["check_date"])
+            db_tools.load_courts_to_stage(result_part, db_config, court_config["alias"], court_config["check_date"])
+            # db_tools.load_courts_to_dm(db_config, court_config["alias"], court_config["check_date"])
+            # db_tools.deactivate_outdated_bot_log_entries(db_config, court_config["alias"], court_config["check_date"])
         if status == "success":
             logger.info("Parser " + court_config["parser_type"] + " court " + court_config[
                 "alias"] + " date " + court_config["check_date"].strftime(
@@ -104,7 +104,7 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
             future = executor6.submit(parser_6.parse_page, court)
         elif court["parser_type"] == "7":
             future = executor7.submit(parser_7.parse_page, court)
-        elif court["parser_type"] == "8":
+        elif court["parser_type"] == "80":
             future = executor8.submit(parser_8.parse_page, court)
         elif court["parser_type"] == "9":
             future = executor8.submit(parser_9.parse_page, court)
@@ -129,7 +129,8 @@ def scrap_courts(courts_config: list[dict[str, str | datetime]], db_config: dict
         if result_len > 0:
             while True:
                 try:
-                    db_tools.load_courts_to_stage(result_part, db_config, court_config["alias"], court_config["check_date"])
+                    db_tools.load_courts_to_stage(result_part, db_config, court_config["alias"],
+                                                  court_config["check_date"])
                     break
                 except Exception as estg:
                     logger.warning("Failed to load data to stage. Retry in 3 seconds - " + str(estg))
@@ -166,20 +167,24 @@ def main() -> None:
                  "port": os.environ["MYSQL_PORT"],
                  "user": os.environ["MYSQL_USER"],
                  "passwd": os.environ["MYSQL_PASS"],
-                 "db": os.environ["MYSQL_DB"]
+                 "db": os.environ["MYSQL_DB"],
+                 "engine_type": "mysql",
                  }
     db_config_wrk = {"host": os.environ["MYSQL_HOST_WRK"],
                      "port": os.environ["MYSQL_PORT_WRK"],
                      "user": os.environ["MYSQL_USER_WRK"],
                      "passwd": os.environ["MYSQL_PASS_WRK"],
-                     "db": os.environ["MYSQL_DB_WRK"]
+                     "db": os.environ["MYSQL_DB_WRK"],
+                     "engine_type": "mysql",
                      }
-    # courts_config = db_tools.read_courts_config(db_config_wrk)
-    # scrap_courts(courts_config, db_config_wrk)
-    # scrap_courts_no_parallel(courts_config, db_config)
+    courts_config = db_tools.read_courts_config(db_config_wrk)
+    scrap_courts(courts_config, db_config_wrk)
+    # scrap_courts_no_parallel(courts_config, db_config_wrk)
     db_tools.etl_load_court_cases_dq(db_config_wrk)
     db_tools.etl_load_court_cases_dv(db_config_wrk)
     db_tools.etl_load_court_cases_dm(db_config_wrk)
+
+    # db_tools.transfer_dm_from_wrk_to_host(db_config_wrk_ora, db_config)
 
 
 if __name__ == "__main__":

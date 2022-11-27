@@ -53,15 +53,17 @@ class Config():
 
 
 MAX_RETRIES = 5
-RANGE_BACKWARD = 30
-RANGE_FORWARD = 45
+RANGE_BACKWARD = 90
+RANGE_FORWARD = 40
 # timeout in seconds
 PAGE_LOAD_TIMEOUT = 60
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.2 (KHTML, like Gecko) Chrome/22.0.1216.0 Safari/537.2"
 
 STAGE_TABLE = "stage_lnd_court_cases"
-LINKS_STAGE_TABLE = "stage_stg_case_links"
+LINKS_STAGE_TABLE = "stage_lnd_case_links"
+
+DM_TABLES_TO_TRANSFER = ["dm_court_cases", "dm_court_case_stats", "dm_case_links"]
 
 SCRAPER_CONFIG = {
     1: {"workers_count": 7,
@@ -172,6 +174,7 @@ SCRAPER_CONFIG = {
                           {"name": "hearing_time", "mapping": "col8"},
                           {"name": "hearing_place", "mapping": "col9"},
                           {"name": "case_info", "mapping": "case_info"},
+                          {"name": "case_link", "mapping": "case_link"},
                           {"name": "judge", "mapping": "judge"},
                           ]
         },
@@ -190,7 +193,7 @@ SCRAPER_CONFIG = {
                           ]
         },
     9: {"workers_count": 1,
-        "links_workers_count": 3,
+        "links_workers_count": 4,
         "stage_mapping": [{"name": "court", "mapping": "court"},
                           {"name": "court_alias", "mapping": "court_alias"},
                           {"name": "check_date", "mapping": "check_date"},

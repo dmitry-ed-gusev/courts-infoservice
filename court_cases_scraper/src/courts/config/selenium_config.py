@@ -21,6 +21,7 @@ accept_languages = ["ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3",
 resolutions = ["1280,800", "1280,960", "1280,1024", "1440,900", "1440,1080", "1600,1200", "1920,1080",
                "1920,1200"]
 
+
 user_agent = user_agents[random.randrange(0, len(user_agents))]
 
 firefox_options = webdriver.FirefoxOptions()
@@ -31,6 +32,7 @@ firefox_options.add_argument("--enable-javascript")
 firefox_options.add_argument("--enable-automation")
 firefox_options.add_argument("--disable-blink-features=AutomationControlled")
 firefox_options.add_argument("--user-agent=" + user_agent)
+firefox_options.set_preference("http.response.timeout", 60)
 
 gecko_version = "v0.32.0"
 

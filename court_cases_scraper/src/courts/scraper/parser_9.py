@@ -17,6 +17,8 @@ from courts.web.web_client import WebClient
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """request page and parse response"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
+    result = []
+    section_name = ""
     firefox_service = Service(GeckoDriverManager(version=selenium_config.gecko_version).install())
     while True:
         try:
@@ -26,8 +28,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         except:
             time.sleep(3)
     driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
-    result = []
-    section_name = ""
     url = court.get(
         "link") + "/lk/practice/hearings?&numberExact=true&eventDateExact=true&eventDateFrom=" + check_date
     logger.debug(url)
@@ -42,8 +42,12 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             break
         except:
             None
-
+    retries = 0
     while True:
+        retries += 1
+        if retries > 10:
+            driver.close()
+            return DataFrame(), court, "failure"
         try:
             button = driver.find_element("id", "loadButtonContainer")
             button.click()
@@ -138,6 +142,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
                     break
 
     data = {"case_link": [link_config["case_link"], ],
+            "court_alias": [link_config["alias"], ],
             "case_num": [link_config["case_num"], ],
             "link_case_num": [link_case_num, ],
             "link_court_name": [link_court_name, ],

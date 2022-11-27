@@ -65,7 +65,6 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         page = session.get(link_config["case_link"])
     except:
         return DataFrame(), link_config, "failure"
-
     soup = BeautifulSoup(page.content, 'html.parser')
     rows = soup.find_all("tr")
     case_uid = link_case_num = link_court_name = None
@@ -80,6 +79,7 @@ def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
         if cols[0].text.strip() == "Суд (судебный участок) первой инстанции":
             link_court_name = cols[1].text.strip()
     data = {"case_link": [link_config["case_link"], ],
+            "court_alias": [link_config["alias"], ],
             "case_num": [link_config["case_num"], ],
             "case_uid": [case_uid, ],
             "link_case_num": [link_case_num, ],
