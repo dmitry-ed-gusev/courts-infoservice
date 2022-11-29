@@ -10,9 +10,9 @@
     Modified: Dmitrii Gusev, 21.10.2022
 """
 
-import os
 import json
 import logging
+import os
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Used for a default title
-APP_TITLE = 'Все суды РФ'
-APP_NAME = 'Информация о судебных делах РФ'
+APP_TITLE = "Все суды РФ"
+APP_NAME = "Информация о судебных делах РФ"
 
 # Database configuration JSON file
 DB_CONFIG_JSON = str(BASE_DIR) + "/_db_config.json"
@@ -38,13 +38,12 @@ SECRET_KEY = "django-insecure-q)33m-yhqo*(%tx#z*zo()yj*3lq94-*5+5(1c@s^vd)q6tn6h
 DEBUG = True
 
 # todo: check this setting!
-ALLOWED_HOSTS = ['*', 'courts.itech-lab.ru', 'www.courts.itech-lab.ru']
+ALLOWED_HOSTS = ["*", "courts.itech-lab.ru", "www.courts.itech-lab.ru"]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-
     # - django applications
     "django.contrib.admin",
     "django.contrib.auth",
@@ -52,24 +51,21 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # - django installed extensions
-    'django.contrib.humanize',
-    'django_extensions',
-    'crispy_forms',
-    'rest_framework',
-    'social_django',
-    'taggit',
-
+    "django.contrib.humanize",
+    "django_extensions",
+    "crispy_forms",
+    "rest_framework",
+    "social_django",
+    "taggit",
     # - our custom applications
-    'home.apps.HomeConfig',  # application for the site [Home/Main Page]
-    'courts.apps.CourtsConfig',  # application for the [Courts Info Page]
-    'stats.apps.StatsConfig',  # application for the [Statistics Info Page]
-
+    "home.apps.HomeConfig",  # application for the site [Home/Main Page]
+    "courts.apps.CourtsConfig",  # application for the [Courts Info Page]
+    "stats.apps.StatsConfig",  # application for the [Statistics Info Page]
 ]
 
 # When we get to crispy forms :)
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
+CRISPY_TEMPLATE_PACK = "bootstrap3"
 
 # When we get to tagging
 TAGGIT_CASE_INSENSITIVE = True
@@ -97,10 +93,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-
-                'home.context_processors.settings',  # new added
-                'social_django.context_processors.backends',  # new added
-                'social_django.context_processors.login_redirect',  # new added
+                "home.context_processors.settings",  # new added
+                "social_django.context_processors.backends",  # new added
+                "social_django.context_processors.login_redirect",  # new added
             ],
         },
     },
@@ -122,7 +117,7 @@ WSGI_APPLICATION = "courtsinfo.wsgi.application"
 # }
 
 # todo: put it somewhere?
-with open(DB_CONFIG_JSON, 'r') as f:
+with open(DB_CONFIG_JSON, "r") as f:
     db_config = json.load(f)
 
 DATABASES = db_config
@@ -166,9 +161,9 @@ STATIC_URL = "static/"
 STATIC_ROOT = "static/"
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     )
 }
 
@@ -191,8 +186,8 @@ REST_FRAMEWORK = {
 #     'django.contrib.auth.backends.ModelBackend',
 # )
 
-LOGOUT_REDIRECT_URL = '/'
-LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/"
 
 # Don't set default LOGIN_URL - let django.contrib.auth set it when it is loaded
 # LOGIN_URL = '/accounts/login'
@@ -209,40 +204,31 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-
     "formatters": {  # logging formatters
-
         "standard": {  # standard log format
             "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
         },
-
         "simple": {  # usually used log format
             "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         },
-
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
-
     },  # end of formatters block
-
     "handlers": {  # logging handlers
-
         "default": {  # default handler (for emergency cases)
             "level": "DEBUG",
             "formatter": "standard",
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stdout",  # Default is stderr
         },
-
         "console": {  # usual console handler
             "class": "logging.StreamHandler",
             "level": "DEBUG",
             "formatter": "simple",
             "stream": "ext://sys.stdout",
         },
-
         "std_file_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
@@ -252,7 +238,6 @@ LOGGING = {
             "backupCount": 20,
             "encoding": "UTF-8",
         },
-
         "error_file_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "ERROR",
@@ -262,46 +247,37 @@ LOGGING = {
             "backupCount": 20,
             "encoding": "UTF-8",
         },
-
     },  # end of handlers block
-
     "loggers": {  # defining logger block
-
-        'django': {  # dedicated django logger - log only to console
-            'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-            'propagate': False,
+        "django": {  # dedicated django logger - log only to console
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
         },
-
-        'parso': {  # django shell parser/autocomplete, it worth to have it upper DEBUG
-            'level': 'INFO',  # todo: set to WARN?
+        "parso": {  # django shell parser/autocomplete, it worth to have it upper DEBUG
+            "level": "INFO",  # todo: set to WARN?
         },
-
         "rallytool": {  # todo: logger for some library used
             # 'handlers': ['default'],
             "level": "DEBUG",
             # 'propagate': False
         },
-
         "__main__": {  # if __name__ == '__main__' - emergency case!!!
             "handlers": ["default"],
             "level": "DEBUG",
             "propagate": False,
         },
-
     },  # end of loggers module
-
     "root": {  # root logger
         "level": "DEBUG",  # todo: should be WARNING for PROD?
         "handlers": ["console", "std_file_handler", "error_file_handler"],
     },
-
 }  # end of LOGGING block
 
 # https://coderwall.com/p/uzhyca/quickly-setup-sql-query-logging-django
 # https://stackoverflow.com/questions/12027545/determine-if-django-is-running-under-the-development-server
 
-'''  # Leave off for now
+"""  # Leave off for now
 import sys
 if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
     print('Running locally')
@@ -321,4 +297,4 @@ if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
             },
         }
     }
-'''
+"""

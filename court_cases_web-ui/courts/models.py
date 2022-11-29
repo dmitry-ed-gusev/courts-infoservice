@@ -1,5 +1,5 @@
-from pyexpat import model
 from django.db import models
+from pyexpat import model
 
 
 class DmCourtCases(models.Model):
@@ -23,5 +23,5 @@ class DmCourtCases(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'dm_court_cases'
-        ordering = ['court_alias', 'court']
+        db_table = "dm_court_cases"
+        ordering = ["court_alias", "court"]

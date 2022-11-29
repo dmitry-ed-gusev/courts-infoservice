@@ -1,12 +1,12 @@
 import logging
-from django.shortcuts import render
-from django.db.models import Q
-from django.http import HttpResponse
-from django.core.paginator import Paginator
-from django.views.generic.list import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 from courts.models import DmCourtCases
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.views.generic.list import ListView
 
 log = logging.getLogger(__name__)
 
@@ -20,14 +20,14 @@ def index(request):
 class CourtsListView(LoginRequiredMixin, ListView):
     # by convention - name of the view:
     # template_name = 'courts/dmcourtcases_list.html'
-    template_name = 'courts/courts_list.html'
+    template_name = "courts/courts_list.html"
 
     model = DmCourtCases
     # paginate_by = 25
     # context_object_name = 'object_list'
 
     def get(self, request):
-        log.debug('CourtsListView.get() is working.')
+        log.debug("CourtsListView.get() is working.")
 
         strval = self.request.GET.get("search", False)
         log.debug(f"Search string: [{strval}].")
@@ -43,20 +43,27 @@ class CourtsListView(LoginRequiredMixin, ListView):
             object_list = DmCourtCases.objects.filter(query).select_related().distinct()
 
             # found objects list size
-            log.debug(f'Objects list size: {len(object_list)}')
+            log.debug(f"Objects list size: {len(object_list)}")
             objects_list_size = len(object_list)
 
             # when we've created object_list (found all data) - add pagination to it
-            paginator = Paginator(object_list, PAGE_SIZE)  # use Paginator and show XX items per page
-            page_number = request.GET.get('page', 1)  # current page number
+            paginator = Paginator(
+                object_list, PAGE_SIZE
+            )  # use Paginator and show XX items per page
+            page_number = request.GET.get("page", 1)  # current page number
             # get the current Page (frame of data) from Paginator and replace the found
             # objects list with the current frame of data (we have to show only the current page)
             page_obj = paginator.get_page(page_number)
             object_list = page_obj
 
             # creating the context for the page: list of ADs (limited by search), favorites, search string
-            ctx = {'object_list': object_list, 'size': objects_list_size, 'page_size': PAGE_SIZE,
-                   'search': strval, 'page_obj': page_obj}
+            ctx = {
+                "object_list": object_list,
+                "size": objects_list_size,
+                "page_size": PAGE_SIZE,
+                "search": strval,
+                "page_obj": page_obj,
+            }
 
         else:  # no search string - provide the full list (!!!) - empty page!
             # object_list = DmCourtCases.objects.all()  # .order_by('court_alias')

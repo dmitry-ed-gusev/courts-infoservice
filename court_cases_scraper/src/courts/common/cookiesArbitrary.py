@@ -1,10 +1,10 @@
 import time
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service as ChromeService
-from courts.utils.utilities import singleton, threadsafe_function
-from selenium import webdriver
 
 from courts.config import selenium_config as reloaded_selenium_config
+from courts.utils.utilities import singleton, threadsafe_function
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 @singleton
@@ -61,10 +61,17 @@ class CookiesArbitrary:
 
         self.__user_agent = reloaded_selenium_config.user_agent
 
-        chrome_service = ChromeService(ChromeDriverManager(version=reloaded_selenium_config.chrome_version).install())
+        chrome_service = ChromeService(
+            ChromeDriverManager(
+                version=reloaded_selenium_config.chrome_version
+            ).install()
+        )
         while True:
             try:
-                driver = webdriver.Chrome(service=chrome_service, options=reloaded_selenium_config.chrome_options)
+                driver = webdriver.Chrome(
+                    service=chrome_service,
+                    options=reloaded_selenium_config.chrome_options,
+                )
                 break
             except Exception as ce:
                 time.sleep(3)
@@ -98,5 +105,5 @@ class CookiesArbitrary:
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
-            "TE": "trailers"
+            "TE": "trailers",
         }

@@ -7,7 +7,7 @@ court_alias varchar(50) not null,
 check_date date not null,
 section_name varchar(1000),
 order_num int,
-case_num varchar(255),
+case_num varchar(500),
 hearing_time varchar(50),
 hearing_place varchar(255),
 case_info varchar(10000),
@@ -19,7 +19,8 @@ case_link varchar(500),
 row_hash varchar(100) not null,
 load_dttm datetime not null,
 PRIMARY KEY (id)
-);
+)
+ROW_FORMAT = COMPRESSED;
 
 alter table dm_court_cases add index idx_case_num (case_num);
 

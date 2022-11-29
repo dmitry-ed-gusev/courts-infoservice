@@ -17,19 +17,24 @@
 """
 
 import logging
+from typing import Any, AnyStr, Dict, List, Tuple
+
 import requests
+from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
+from courts.utils.utilities import threadsafe_function
+from fake_useragent import UserAgent
 from requests import Response
 from requests.adapters import HTTPAdapter, Retry
-from fake_useragent import UserAgent
-from typing import Dict, Tuple, List, AnyStr, Any
-from courts.utils.utilities import threadsafe_function
-from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
 
 log = logging.getLogger(__name__)
 
 HTTP_DEFAULT_TIMEOUT = 20  # default HTTP requests timeout (seconds)
-HTTP_DEFAULT_BACKOFF = 1  # default back off factor (it is better to not touch this value!)
-HTTP_DEFAUT_RETRIES = 4  # default retries num for HTTP requests (+1 for the original request!)
+HTTP_DEFAULT_BACKOFF = (
+    1  # default back off factor (it is better to not touch this value!)
+)
+HTTP_DEFAUT_RETRIES = (
+    4  # default retries num for HTTP requests (+1 for the original request!)
+)
 
 
 # todo: see sample here: https://github.com/psf/requests/issues/4233
@@ -71,7 +76,7 @@ class TimeoutHTTPAdapter(HTTPAdapter):
 
 class WebClient:
     """Simple WebClient class (class based on the [requests] module).
-        If user_agent specified - use it, if not - generate it randomly.
+    If user_agent specified - use it, if not - generate it randomly.
     """
 
     # class (not instance!) variable - when we create multiple instances of this class - we need
@@ -89,10 +94,19 @@ class WebClient:
             WebClient.__ua.update()
             WebClient.__user_agent_info_updated = True
 
-    def __init__(self, headers: Dict[str, str] = None, cookies: Dict[str, str] = None, auth=None,
-                 user_agent: str = "", allow_redirects: bool = True, redirects_count: int = 0,
-                 timeout: int = HTTP_DEFAULT_TIMEOUT, retries: int = HTTP_DEFAUT_RETRIES,
-                 update_user_agents_info: bool = False, dont_raise_for: List[int] = None) -> None:
+    def __init__(
+        self,
+        headers: Dict[str, str] = None,
+        cookies: Dict[str, str] = None,
+        auth=None,
+        user_agent: str = "",
+        allow_redirects: bool = True,
+        redirects_count: int = 0,
+        timeout: int = HTTP_DEFAULT_TIMEOUT,
+        retries: int = HTTP_DEFAUT_RETRIES,
+        update_user_agents_info: bool = False,
+        dont_raise_for: List[int] = None,
+    ) -> None:
         log.debug("Initializing WebClient() instance.")
 
         if update_user_agents_info:
@@ -114,20 +128,29 @@ class WebClient:
         def assert_status_hook(response, *args, **kwargs):
             expanded_raise_for_status(response, dont_raise_for)
 
-        self.__session.hooks["response"] = [assert_status_hook]  # install/link hook to the session
+        self.__session.hooks["response"] = [
+            assert_status_hook
+        ]  # install/link hook to the session
 
         # setup retries strategy for the session - see mounting it below
         retry_strategy = Retry(  # create retry strategy
             total=retries,  # total # of retries, see HTTP codes that will be retried -> status_forcelist
             backoff_factor=HTTP_DEFAULT_BACKOFF,  # backoff: 1 -> [0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256] sec
-
             # for these HTTP error status codes will be applied the Retry startegy, in case the retry limit
             # will be reached without success - TooMaxRetries(?) issue will be raised, otherwise the
             # success status/response (1xx, 2xx, 3xx) will be returned.
             status_forcelist=[429, 500, 502, 503, 504],  # statuses for retry
-
             # use 'allowed_methods' instead of 'method_whitelist' (deprecated and will be removed in v2.0)
-            allowed_methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH"],
+            allowed_methods=[
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "HEAD",
+                "OPTIONS",
+                "TRACE",
+                "PATCH",
+            ],
         )
 
         # create TimeoutHTTPAdapter (based on HTTPAdapter) and mount it to prefixes
@@ -145,60 +168,86 @@ class WebClient:
             self.__session.max_redirects = redirects_count
         if not user_agent:  # set User Agent header
             user_agent = WebClient.__ua.random
-        self.__session.headers.update({"user-agent": user_agent})  # header may be "User-Agent"
+        self.__session.headers.update(
+            {"user-agent": user_agent}
+        )  # header may be "User-Agent"
         if auth:  # add authorization to session
             self.__session.auth = auth
 
-        log.debug("WebClient() instance initialized OK. Configuration:\n"
-                  f"Headers: {self.__session.headers}\n"
-                  f"Cookies: {self.__session.cookies}\n")
+        log.debug(
+            "WebClient() instance initialized OK. Configuration:\n"
+            f"Headers: {self.__session.headers}\n"
+            f"Cookies: {self.__session.cookies}\n"
+        )
 
     def get(self, url: str, params: Dict[str, str] = None) -> Response:
         """Perform HTTP GET request with retry (if necessary).
         :param params: request parameters -> will be added to the URL
         """
         log.debug(f"WebClient.get(): {url}. Params: {params}.")
-        return self.__session.get(url, params=params, allow_redirects=self.__allow_redirects)
+        return self.__session.get(
+            url, params=params, allow_redirects=self.__allow_redirects
+        )
 
-    def post(self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None) -> Response:
+    def post(
+        self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None
+    ) -> Response:
         """Perform HTTP POST request with retry (if necessary).
         :param data: request data -> will be added to the request body (HTTP POST)
         :param params: request parameters -> will be added to the URL
         """
         log.debug(f"WebClient.post(): {url}. Params: {params}. Data: {data}.")
-        return self.__session.post(url, data=data, params=params, allow_redirects=self.__allow_redirects)
+        return self.__session.post(
+            url, data=data, params=params, allow_redirects=self.__allow_redirects
+        )
 
-    def put(self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None) -> Response:
+    def put(
+        self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None
+    ) -> Response:
         """Perform HTTP PUT request with retry (if necessary).
         :param data: request data -> will be added to the request body (like HTTP POST)
         :param params: request parameters -> will be added to the URL
         """
         log.debug(f"WebClient.put(): {url}. Params: {params}. Data: {data}.")
-        return self.__session.put(url, data=data, params=params, allow_redirects=self.__allow_redirects)
+        return self.__session.put(
+            url, data=data, params=params, allow_redirects=self.__allow_redirects
+        )
 
-    def delete(self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None) -> Response:
+    def delete(
+        self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None
+    ) -> Response:
         """Perform HTTP DELETE request with retry (if necessary).
         :param data: request data -> will be added to the request body (like HTTP POST)
         :param params: request parameters -> will be added to the URL
         """
         log.debug(f"WebClient.delete(): {url}. Params: {params}. Data: {data}.")
-        return self.__session.delete(url, data=data, params=params, allow_redirects=self.__allow_redirects)
+        return self.__session.delete(
+            url, data=data, params=params, allow_redirects=self.__allow_redirects
+        )
 
-    def head(self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None) -> Response:
+    def head(
+        self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None
+    ) -> Response:
         """Perform HTTP HEAD request with retry (if necessary).
         :param data: request data -> will be added to the request body (like HTTP POST)
         :param params: request parameters -> will be added to the URL
         """
         log.debug(f"WebClient.head(): {url}. Params: {params}. Data: {data}.")
-        return self.__session.head(url, data=data, params=params, allow_redirects=self.__allow_redirects)
+        return self.__session.head(
+            url, data=data, params=params, allow_redirects=self.__allow_redirects
+        )
 
-    def options(self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None) -> Response:
+    def options(
+        self, url: str, data: Dict[str, str] = None, params: Dict[str, str] = None
+    ) -> Response:
         """Perform HTTP OPTIONS request with retry (if necessary).
         :param data: request data -> will be added to the request body (like HTTP POST)
         :param params: request parameters -> will be added to the URL
         """
         log.debug(f"WebClient.options(): {url}. Params: {params}. Data: {data}.")
-        return self.__session.options(url, data=data, params=params, allow_redirects=self.__allow_redirects)
+        return self.__session.options(
+            url, data=data, params=params, allow_redirects=self.__allow_redirects
+        )
 
 
 # def http_get_request(url: str, request_params: dict, retry_count: int = 0) -> str:
@@ -207,7 +256,7 @@ class WebClient:
 #     :param url: url to request
 #     :param request_params: reuqest parameters (will be added to the request URL - for the GET request)
 #     :param retry_count: number of retries. 0 -> no retries (one request), less than 0 -> no requests at all,
-#                         greater than 0 -> (retry_count + 1) - such number of requests (one original 
+#                         greater than 0 -> (retry_count + 1) - such number of requests (one original
 #                         request + # of retries)
 #     :return: HTML output with data (text/str)
 #     """
@@ -246,7 +295,7 @@ class WebClient:
 #     :param url: url to request
 #     :param request_params: reuqest parameters (will be added to the body of the POST request)
 #     :param retry_count: number of retries. 0 -> no retries (one request), less than 0 -> no requests at all,
-#                         greater than 0 -> (retry_count + 1) - such number of requests (one original 
+#                         greater than 0 -> (retry_count + 1) - such number of requests (one original
 #                         request + # of retries)
 #     :return: HTML output with data (text/str)
 #     """

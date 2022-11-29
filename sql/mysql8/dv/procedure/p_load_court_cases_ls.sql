@@ -31,6 +31,8 @@ begin
                 and lsat.row_hash = stg.row_hash
     where lsat.court_case_l_id is null;
 
+    commit;
+
     create temporary table temp_dv_court_cases_ls_dates
     as
     select court_case_l_id,
@@ -51,5 +53,48 @@ begin
 	        on tgt.court_case_l_id = src.court_case_l_id
 	            and tgt.begin_dttm = src.begin_dttm
     set tgt.end_dttm = src.new_end_dttm;
-    -- todo close deleted records
+
+    commit;
+
+    -- close deleted records
+    create temporary table temp_loaded_court_cases
+    as
+    select distinct court_alias, check_date
+    from stage_stg_court_cases stg;
+
+    create temporary table temp_exist_data
+    as
+    select distinct lhub.court_case_l_id
+    from stage_stg_court_cases stg
+        join dv_court_cases_h hub
+            on coalesce(stg.case_num,'N/A') = hub.case_num
+                and stg.court_alias = hub.court_alias
+        join dv_court_cases_l lhub
+            on lhub.court_case_id = hub.court_case_id
+                and lhub.check_date = stg.check_date
+                and lhub.order_num = stg.order_num;
+
+    create temporary table temp_link_to_close
+    as
+    select ccls.court_case_l_id, ccls.begin_dttm
+    from dv_court_cases_l ccl IGNORE INDEX (PRIMARY, court_case_id)
+	    join dv_court_cases_ls ccls IGNORE INDEX (PRIMARY)
+		    on ccl.court_case_l_id = ccls.court_case_l_id
+	    join dv_court_cases_h cch IGNORE INDEX (PRIMARY, idx_case_alias)
+	    	on ccl.court_case_id = cch.court_case_id
+	    join temp_loaded_court_cases tlcc
+		    on ccl.check_date = tlcc.check_date
+		    	and cch.court_alias = tlcc.court_alias
+	    left join temp_exist_data ted
+		    on ccl.court_case_l_id = ted.court_case_l_id
+    where ted.court_case_l_id is null
+	    and ccls.end_dttm is null;
+
+    update dv_court_cases_ls tgt
+	    join temp_link_to_close src
+		    on tgt.court_case_l_id = src.court_case_l_id
+			    and tgt.begin_dttm = src.begin_dttm
+    set tgt.end_dttm = now();
+
+    commit;
 end;

@@ -3,9 +3,11 @@ drop procedure if exists dm_p_load_case_links;
 create procedure dm_p_load_case_links ()
 begin
 
-    delete from dm_case_links;
+    truncate table dm_case_links;
 
-    insert into dm_case_links (case_link, court_alias, court_name, case_num, case_uid, link_case_num, link_court_name, link_level, is_primary)
+    commit;
+
+    insert into dm_case_links (case_link, court_alias, court_name, case_num, case_uid, link_case_num, link_court_name, link_level, is_primary, load_dttm)
     select clhub.case_link,
 	    cchub.court_alias,
 	    cfg.title as court_name,
@@ -14,7 +16,8 @@ begin
 	    cll.link_case_num,
 	    clls.link_court_name,
 	    clls.link_level,
-	    clls.is_primary
+	    clls.is_primary,
+	    clls.load_dttm
     from dv_case_link_h clhub
 	    join dv_case_link_hs clhs
 		    on clhub.case_link_id = clhs.case_link_id
@@ -29,5 +32,5 @@ begin
 	    join config_court_scrap_config cfg
 		    on cchub.court_alias = cfg.alias;
 
-    delete from stage_lnd_case_links;
+    commit;
 end;

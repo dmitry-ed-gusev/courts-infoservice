@@ -1,6 +1,7 @@
 drop table if exists dm_case_links_old;
 
 create table dm_case_links_old (
+id int not null AUTO_INCREMENT,
 case_link varchar(500) not null,
 court_alias varchar(50) not null,
 court_name varchar(500) not null,
@@ -10,8 +11,10 @@ link_case_num varchar(255),
 link_court_name varchar(500),
 link_level varchar(5),
 is_primary boolean not null,
-load_dttm datetime not null default now()
-);
+load_dttm datetime not null,
+PRIMARY KEY (id)
+)
+ROW_FORMAT = COMPRESSED;
 
 alter table dm_case_links_old add index idx_case_link (case_link);
 

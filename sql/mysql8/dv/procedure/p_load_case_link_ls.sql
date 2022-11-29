@@ -58,16 +58,16 @@ begin
     as
     select distinct lhub.case_link_l_id
     from stage_stg_case_links stg
-        join dv_court_cases_h hub
+        join dv_court_cases_h hub IGNORE INDEX(PRIMARY, idx_case_alias)
             on stg.case_num = hub.case_num
                 and stg.court_alias = hub.court_alias
-        join dv_case_link_h hubcl
+        join dv_case_link_h hubcl IGNORE INDEX(PRIMARY, idx_case_link)
             on stg.case_link = hubcl.case_link
-        join dv_case_link_l lhub
+        join dv_case_link_l lhub IGNORE INDEX(PRIMARY, case_link_id)
             on lhub.case_link_id = hubcl.case_link_id
                 and lhub.court_case_id = hub.court_case_id
                 and lhub.link_case_num = coalesce(stg.link_case_num,'N/A')
-        join dv_case_link_ls lsat
+        join dv_case_link_ls lsat IGNORE INDEX(PRIMARY)
             on lsat.case_link_l_id = lhub.case_link_l_id
                 and lsat.end_dttm is null
                 and lsat.row_hash = md5(concat_ws('#', stg.link_court_name, stg.link_level, stg.is_primary));

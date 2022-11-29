@@ -1,6 +1,6 @@
 create table if not exists dv_court_cases_h (
 court_case_id int not null,
-case_num varchar(255) not null default 'N/A',
+case_num varchar(500) not null default 'N/A',
 court_alias varchar(50) not null,
 load_dttm datetime default now(),
 PRIMARY KEY (court_case_id)

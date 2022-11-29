@@ -2,21 +2,23 @@
 script for debugging
 don't include in setup
 """
-from datetime import datetime
 import os
+from datetime import datetime
+
+from courts.db import db_tools
+from courts.scraper import (
+    parser_1,
+    parser_2,
+    parser_3,
+    parser_4,
+    parser_5,
+    parser_6,
+    parser_7,
+    parser_8,
+    parser_9,
+)
 from dotenv import load_dotenv
 from loguru import logger
-from courts.db import db_tools
-from courts.scraper import (parser_1,
-                            parser_2,
-                            parser_3,
-                            parser_4,
-                            parser_5,
-                            parser_6,
-                            parser_7,
-                            parser_8,
-                            parser_9,
-                            )
 
 test_mode = 101
 check_date = "13.12.2022"
@@ -24,43 +26,73 @@ check_date_dt = datetime.strptime(check_date, "%d.%m.%Y")
 
 # Load environment variables from .env file from the project root dir
 load_dotenv()
-db_config = {"host": os.environ["MYSQL_HOST"],
-             "port": os.environ["MYSQL_PORT"],
-             "user": os.environ["MYSQL_USER"],
-             "passwd": os.environ["MYSQL_PASS"],
-             "db": os.environ["MYSQL_DB"]}
+db_config = {
+    "host": os.environ["MYSQL_HOST"],
+    "port": os.environ["MYSQL_PORT"],
+    "user": os.environ["MYSQL_USER"],
+    "passwd": os.environ["MYSQL_PASS"],
+    "db": os.environ["MYSQL_DB"],
+}
 
 match test_mode:
     case 1:
-        court = {"title": "Василеостровский районный суд", "link": "https://vos--spb.sudrf.ru", "server_num": "1",
-                 "alias": "spb-vos",
-                 "check_date": check_date_dt}
+        court = {
+            "title": "Василеостровский районный суд",
+            "link": "https://vos--spb.sudrf.ru",
+            "server_num": "1",
+            "alias": "spb-vos",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_1.parse_page(court)
     case 3:
-        court = {"title": "Краснодарский краевой суд (Краснодарский край)", "link": "https://kraevoi--krd.sudrf.ru",
-                 "server_num": "1", "alias": "krd-kks",
-                 "check_date": check_date_dt}
+        court = {
+            "title": "Краснодарский краевой суд (Краснодарский край)",
+            "link": "https://kraevoi--krd.sudrf.ru",
+            "server_num": "1",
+            "alias": "krd-kks",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_3.parse_page(court)
     case 4:
-        court = {"title": "Мировой суд (Город Санкт-Петербург)", "link": "https://mirsud.spb.ru", "alias": "spb-mir",
-                 "check_date": check_date_dt}
+        court = {
+            "title": "Мировой суд (Город Санкт-Петербург)",
+            "link": "https://mirsud.spb.ru",
+            "alias": "spb-mir",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_4.parse_page(court)
     case 5:
-        court = {"title": "Мировой суд (Город Москва)", "link": "https://mos-sud.ru", "alias": "msk-mir",
-                 "check_date": check_date_dt}
+        court = {
+            "title": "Мировой суд (Город Москва)",
+            "link": "https://mos-sud.ru",
+            "alias": "msk-mir",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_5.parse_page(court)
     case 7:
-        court = {"title": "Мировой суд (Город Ставрополь)", "link": "https://stavmirsud.ru/officework",
-                 "alias": "stav-mir",
-                 "check_date": check_date_dt}
+        court = {
+            "title": "Мировой суд (Город Ставрополь)",
+            "link": "https://stavmirsud.ru/officework",
+            "alias": "stav-mir",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_7.parse_page(court)
     case 8:
-        court = {"title": "arbitr stav", "link": "https://rad.arbitr.ru", "alias": "stav-arbitr",
-                 "server_num": "MSK", "check_date": check_date_dt}
+        court = {
+            "title": "arbitr stav",
+            "link": "https://rad.arbitr.ru",
+            "alias": "stav-arbitr",
+            "server_num": "MSK",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_8.parse_page(court)
     case 9:
-        court = {"title": "vsrf", "link": "https://vsrf.ru", "alias": "vsrf",
-                 "check_date": check_date_dt}
+        court = {
+            "title": "vsrf",
+            "link": "https://vsrf.ru",
+            "alias": "vsrf",
+            "check_date": check_date_dt,
+        }
         result, out_court, status = parser_9.parse_page(court)
     case 101:
         link_config = {
@@ -84,11 +116,13 @@ match test_mode:
         }
         result, _, status = parser_3.get_links(link_config)
     case 104:
-        link_config = {"title": "Мировой суд (Город Санкт-Петербург)", "link": "https://mirsud.spb.ru",
-                       "alias": "spb-mir",
-                       "case_link": "https://mirsud.spb.ru/cases/detail/214/?id=5-906%2F2022-7",
-                       "case_num": "some_case_num",
-                       }
+        link_config = {
+            "title": "Мировой суд (Город Санкт-Петербург)",
+            "link": "https://mirsud.spb.ru",
+            "alias": "spb-mir",
+            "case_link": "https://mirsud.spb.ru/cases/detail/214/?id=5-906%2F2022-7",
+            "case_num": "some_case_num",
+        }
         result, _, status = parser_4.get_links(link_config)
     case 105:
         link_config = {
@@ -105,16 +139,18 @@ match test_mode:
         }
         result, _, status = parser_6.get_links(link_config)
     case 108:
-        link_config = {"case_link": "https://kad.arbitr.ru/card/af9fa8bd-8de7-46cc-83ba-2fe769a056a7",
-                       "case_num": "some_case_num",
-                       "alias": "arbitr",
-                       }
+        link_config = {
+            "case_link": "https://kad.arbitr.ru/card/af9fa8bd-8de7-46cc-83ba-2fe769a056a7",
+            "case_num": "some_case_num",
+            "alias": "arbitr",
+        }
         result, _, status = parser_8.get_links(link_config)
     case 109:
-        link_config = {"case_link": "https://vsrf.ru/lk/practice/cases/11582039#11582039",
-                       "case_num": "some_case_num",
-                       "alias": "vsrf",
-                       }
+        link_config = {
+            "case_link": "https://vsrf.ru/lk/practice/cases/11582039#11582039",
+            "case_num": "some_case_num",
+            "alias": "vsrf",
+        }
         result, _, status = parser_9.get_links(link_config)
     case _:
         result = []
