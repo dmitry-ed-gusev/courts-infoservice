@@ -267,9 +267,9 @@ def main() -> None:
         "db": os.environ["MYSQL_DB_WRK"],
         "engine_type": "mysql",
     }
-    # courts_config = db_tools.read_courts_config(db_config_wrk)
+    courts_config = db_tools.read_courts_config(db_config_wrk)
 
-    # scrap_courts(courts_config, db_config_wrk)
+    scrap_courts(courts_config, db_config_wrk)
     # scrap_courts_no_parallel(courts_config, db_config_wrk)
 
     db_tools.etl_load_court_cases_dq(db_config_wrk)

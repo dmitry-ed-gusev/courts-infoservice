@@ -3,7 +3,7 @@ drop procedure if exists dm_p_load_court_cases;
 create procedure dm_p_load_court_cases ()
 begin
     --delete data from dm
-    delete from dm_court_cases;
+    truncate table dm_court_cases;
 
     commit;
 

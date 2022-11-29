@@ -346,11 +346,11 @@ def transfer_dm_from_wrk_to_host(
                 max_val: int = row[1]
                 break
 
-            parts: int = round((max_val - min_val) / scraper_config.BULK_SIZE_ROWS) + 1
+            parts: int = round((max_val - min_val) / scraper_config.BULK_SIZE_ROWS)
             for part in range(0, parts):
                 low_bound = min_val + part * scraper_config.BULK_SIZE_ROWS
                 up_bound = min_val + (1 + part) * scraper_config.BULK_SIZE_ROWS
-                logger.info(f"Reading {key_name} keys between {low_bound} and {up_bound}...")
+                logger.info(f"Reading {str(part+1)} of {str(parts+1)}: {key_name} keys between {low_bound} and {up_bound}...")
                 sql = sa_text(f"select * from {table} where {key_name} >= {low_bound} and {key_name} < {up_bound}")
                 source_data = read_sql_query(sql, connection_wrk)
                 logger.info(f"Read {str(len(source_data))} rows")
