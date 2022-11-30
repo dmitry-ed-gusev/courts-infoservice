@@ -1,11 +1,11 @@
 import logging
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.core.paginator import Paginator
 from django.views.generic.list import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-
 from stats.models import DmVCourtStats
 
 # todo: https://stackoverflow.com/questions/35724208/how-to-paginate-search-results-in-django
@@ -22,7 +22,7 @@ def index(request):  # sample simple view
 class StatsListView(LoginRequiredMixin, ListView):
     # by convention - name of the view:
     # template_name = 'stats/dmvcourtstats_list.html'
-    template_name = 'stats/stats_list.html'
+    template_name = "stats/stats_list.html"
 
     model = DmVCourtStats
     # paginate_by: int = 25
@@ -43,23 +43,34 @@ class StatsListView(LoginRequiredMixin, ListView):
             # __icontains -> for case-insensitive search
             query = Q(court_alias__icontains=strval)
             query.add(Q(title__icontains=strval), Q.OR)
-            object_list = DmVCourtStats.objects.filter(query).select_related().distinct()
+            object_list = (
+                DmVCourtStats.objects.filter(query).select_related().distinct()
+            )
         else:  # no search string - provide the full list
             object_list = DmVCourtStats.objects.all()
 
-        log.debug(f'Objects list size: {len(object_list)}')
+        log.debug(f"Objects list size: {len(object_list)}")
         objects_list_size = len(object_list)
 
         # when we've created object_list (found all data) - add pagination to it
-        paginator = Paginator(object_list, PAGE_SIZE)  # use Paginator and show XX items per page
-        page_number = request.GET.get('page', 1)  # current page number
-        page_obj = paginator.get_page(page_number)  # get the current Page from Paginator
+        paginator = Paginator(
+            object_list, PAGE_SIZE
+        )  # use Paginator and show XX items per page
+        page_number = request.GET.get("page", 1)  # current page number
+        page_obj = paginator.get_page(
+            page_number
+        )  # get the current Page from Paginator
         # todo: Paginator: method get_page() is better (reliable) rather than page() - raises issues...
         # object_list = paginator.page(page_number)  # also assign a current page to the objects list
         object_list = page_obj
 
         # creating the context for the page: list of ADs (limited by search), favorites, search string
-        ctx = {'object_list': object_list, 'size': objects_list_size, 'page_size': PAGE_SIZE,
-               'search': strval, 'page_obj': page_obj}
+        ctx = {
+            "object_list": object_list,
+            "size": objects_list_size,
+            "page_size": PAGE_SIZE,
+            "search": strval,
+            "page_obj": page_obj,
+        }
 
         return render(request, self.template_name, ctx)

@@ -11,4 +11,5 @@
 
 class CourtsScraperException(Exception):
     """Custom Courts Scraper exception for various internal exceptions."""
+
     pass

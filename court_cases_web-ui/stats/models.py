@@ -10,5 +10,5 @@ class DmVCourtStats(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'dm_v_court_stats'
-        ordering = ['court_alias']
+        db_table = "dm_v_court_stats"
+        ordering = ["court_alias"]

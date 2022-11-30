@@ -22,7 +22,6 @@ LOGGING_CONFIG = {
             "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         },
     },  # end of formatters block
-
     "handlers": {
         "default": {  # default handler (for emergency cases)
             # "level": "INFO",
@@ -55,7 +54,6 @@ LOGGING_CONFIG = {
             "encoding": config.encoding,
         },
     },  # end of handlers block
-
     "loggers": {
         "courts": {
             # 'handlers': ['default'],
@@ -68,12 +66,10 @@ LOGGING_CONFIG = {
             "propagate": False,
         },
     },  # end of loggers module
-
     "root": {  # root logger
         "level": "DEBUG",
         "handlers": ["console", "std_file_handler", "error_file_handler"],
     },
-
 }
 
 
