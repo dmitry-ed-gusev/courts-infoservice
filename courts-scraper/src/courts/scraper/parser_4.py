@@ -16,7 +16,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     result = []
     case_types = ["adm", "civil", "criminal", "public"]
     for case_type in case_types:
-        order_num = 0
         page_num = 1
         while True:
             content_json = None
@@ -52,7 +51,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     return DataFrame(), court, "failure"
 
             for row in content_json["result"]["data"]:
-                order_num += 1
                 case_info = None
                 if case_type == "adm":
                     section_name = "Дела об АП"
@@ -103,7 +101,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                         "court_alias": court.get("alias"),
                         "check_date": check_date,
                         "status": row.get("status"),
-                        "order_num": order_num,
                         "case_info": case_info,
                         "section_name": section_name,
                     }

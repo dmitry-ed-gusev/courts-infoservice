@@ -19,7 +19,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     result = []
     page_num = 1
     pages_total = 1
-    order_num = 0
     while True:
         url = (
             court.get("link")
@@ -30,7 +29,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             + "&page="
             + str(page_num)
         )
-        time.sleep(random.randrange(0, 3))
+        time.sleep(random.randrange(1, 3))
         try:
             page = session.get(url)
         except:
@@ -48,7 +47,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 # appending row
                 else:
                     result_row = {}
-                    order_num += 1
                     # td
                     for idx_r, row in enumerate(section.find_all("td")):
                         if idx_r == 3:
@@ -68,7 +66,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     result_row["check_date"] = check_date
                     result_row["court"] = court.get("title")
                     result_row["court_alias"] = court.get("alias")
-                    result_row["order_num"] = order_num
                     result.append(result_row)
         if page_num == 1:
             try:

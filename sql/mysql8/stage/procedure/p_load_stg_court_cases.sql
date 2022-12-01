@@ -11,7 +11,7 @@ begin
         court_alias,
         str_to_date(check_date, '%d.%m.%Y') as check_date,
         section_name,
-        coalesce(order_num, row_number() over (partition by court_alias, check_date, section_name order by hearing_time, hearing_place)) as order_num,
+        row_number() over (partition by court_alias, case_num, check_date, section_name order by hearing_time, hearing_place) as order_num,
         case_num,
         hearing_time,
         hearing_place,

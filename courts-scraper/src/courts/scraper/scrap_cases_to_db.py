@@ -279,6 +279,7 @@ def main() -> None:
     db_tools.transfer_dm_from_wrk_to_host(
         db_config_wrk, db_config, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
     )
+    db_tools.deactivate_outdated_bot_log_entries(db_config)
     db_tools.clean_stage_courts_table(db_config_wrk)
 
 

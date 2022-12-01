@@ -23,7 +23,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     for case_type in case_types:
         empty_flag = False
         page_num = 0
-        order_num = 1
         while not empty_flag:
             empty_flag = True
             url = (
@@ -158,9 +157,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                             "%d.%m.%Y"
                         )
                         result_row["court_alias"] = court.get("alias")
-                        result_row["order_num"] = str(order_num)
                         result_row["case_link"] = url
-                        order_num += 1
                         result.append(result_row)
                 page_num += 1
     data_frame = convert_data_to_df(

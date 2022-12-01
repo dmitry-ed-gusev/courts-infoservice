@@ -16,6 +16,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 def parse_arbitrary_json(court: dict, json_data: json) -> list[dict[str, str]]:
+    """json response parser"""
     result = []
     for courts in json_data["Result"]["Items"]:
         for one_court in courts["Courts"]:
@@ -127,7 +128,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     while True:
         retries += 1
         if retries > 4:
-            req_driver.close()
             req_driver.quit()
             return DataFrame(), court, "failure"
         try:
@@ -171,24 +171,22 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             while True:
                 retries += 1
                 if retries > 4:
-                    req_driver.close()
                     req_driver.quit()
                     return DataFrame(), court, "failure"
                 try:
                     response = req_driver.request(
                         "POST", url_address, data=data, headers=conf.headers
                     )
-                    status_code = response.status_code
-                    json_data = json.loads(response.content)
                 except Exception as e:
                     time.sleep(random.randrange(3, 4))
                     status_code = -1
+                status_code = response.status_code
                 if status_code == 200:
+                    json_data = json.loads(response.content)
                     break
                 if status_code == 403:
                     conf.refresh_cookies()
                 if status_code == 429:
-                    req_driver.close()
                     req_driver.quit()
                     return DataFrame(), court, "failure"
 
@@ -202,7 +200,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         if retries > 4:
             break
         try:
-            req_driver.close()
             req_driver.quit()
             break
         except:
