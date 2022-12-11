@@ -7,13 +7,14 @@
         - (list of settings) https://docs.djangoproject.com/en/4.1/ref/settings/
 
     Created:  Dmitrii Gusev, 16.10.2022
-    Modified: Dmitrii Gusev, 21.10.2022
+    Modified: Dmitrii Gusev, 11.12.2022
 """
 
 import os
 import json
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
 
@@ -24,9 +25,49 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 APP_TITLE = 'Все суды РФ'
 APP_NAME = 'Информация о судебных делах РФ'
 
-# Database configuration JSON file
-DB_CONFIG_JSON = str(BASE_DIR) + "/_db_config.json"
-print(DB_CONFIG_JSON)
+# Default configuration .env file (default/fallback option)
+DEFAULT_ENV_CONFIG: str = ".env.prod"
+# Default environment variable for configuration .env* file
+ENV_CONFIG_VARIABLE: str = 'COURTS_ENV_CONFIG'
+
+
+# todo: https://github.com/joke2k/django-environ
+# todo: https://djangostars.com/blog/configuring-django-settings-best-practices/
+def get_db_config() -> dict:
+    # try to get config value from env variable (COURTS_ENV_CONFIG)
+    config_file: str = os.getenv(ENV_CONFIG_VARIABLE, '')
+    if not config_file:  # no env variable - fall back to default
+        config_file = DEFAULT_ENV_CONFIG
+
+    # make path absolute (assume - we have specified relative file name/path)
+    config_file += str(BASE_DIR) + '/'
+
+    # debug output
+    message: str = (f"Using environment config: {config_file}\n"
+                    f"Current working dir: {os.getcwd()}")
+    print(message)
+
+    # load environment and create DB connection config dictionary
+    load_dotenv(dotenv_path=config_file, verbose=True)
+    db_config: dict = {
+        'default': {
+            'ENGINE': os.environ['DBMS_ENGINE'],  # mandatory, KeyError if no value
+            'NAME': 'production_db',
+            'USER': 'user',
+            'PASSWORD': 'password',
+            'HOST': 'db.example.com',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require'
+            }
+        }
+    }
+
+    print(f"Generated DB config: {db_config}")
+    return db_config
+
+# DB_CONFIG_JSON = str(BASE_DIR) + "/_db_config.json"
+# print(DB_CONFIG_JSON)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -38,11 +79,10 @@ SECRET_KEY = "django-insecure-q)33m-yhqo*(%tx#z*zo()yj*3lq94-*5+5(1c@s^vd)q6tn6h
 DEBUG = True
 
 # todo: check this setting!
-ALLOWED_HOSTS = ['*', 'courts.itech-lab.ru', 'www.courts.itech-lab.ru']
+ALLOWED_HOSTS = ['*', 'courts.itech-lab.ru', 'www.courts.itech-lab.ru',
+                 'courtsinfo.ru', 'www.courtsinfo.ru']
 
-
-# Application definition
-
+# Application definition (installed django apps)
 INSTALLED_APPS = [
 
     # - django applications

@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.views.generic.list import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from stats.models import DmVCourtStats
+from stats.models import DmVCourtCaseStatsDetail
 
 # todo: https://stackoverflow.com/questions/35724208/how-to-paginate-search-results-in-django
 
@@ -24,7 +24,7 @@ class StatsListView(LoginRequiredMixin, ListView):
     # template_name = 'stats/dmvcourtstats_list.html'
     template_name = 'stats/stats_list.html'
 
-    model = DmVCourtStats
+    model = DmVCourtCaseStatsDetail
     # paginate_by: int = 25
 
     def get(self, request):
@@ -43,9 +43,9 @@ class StatsListView(LoginRequiredMixin, ListView):
             # __icontains -> for case-insensitive search
             query = Q(court_alias__icontains=strval)
             query.add(Q(title__icontains=strval), Q.OR)
-            object_list = DmVCourtStats.objects.filter(query).select_related().distinct()
+            object_list = DmVCourtCaseStatsDetail.objects.filter(query).select_related().distinct()
         else:  # no search string - provide the full list
-            object_list = DmVCourtStats.objects.all()
+            object_list = DmVCourtCaseStatsDetail.objects.all()
 
         log.debug(f'Objects list size: {len(object_list)}')
         objects_list_size = len(object_list)
