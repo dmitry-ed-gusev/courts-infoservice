@@ -137,7 +137,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             status_code = response.status_code
             json_data = json.loads(response.content)
         except Exception as e:
-            time.sleep(random.randrange(0, 3))
+            time.sleep(random.randrange(2, 3))
             status_code = -1
         if status_code == 200:
             break
@@ -157,7 +157,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 + str(i + 1)
                 + " of 10."
             )
-            time.sleep(random.randrange(3, 5))
+            time.sleep(random.randrange(3, 4))
             data = (
                 '{"needConfirm":false,"DateFrom":"'
                 + check_date

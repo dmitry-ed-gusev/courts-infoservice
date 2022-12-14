@@ -145,7 +145,7 @@ SCRAPER_CONFIG = {
         ],
     },
     5: {
-        "workers_count": 5,
+        "workers_count": 4,
         "links_workers_count": 5,
         "stage_mapping": [
             {"name": "court", "mapping": "court"},

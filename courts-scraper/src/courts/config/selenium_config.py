@@ -43,7 +43,6 @@ firefox_options.add_argument("--enable-javascript")
 firefox_options.add_argument("--enable-automation")
 firefox_options.add_argument("--disable-blink-features=AutomationControlled")
 firefox_options.add_argument("--user-agent=" + user_agent)
-firefox_options.set_preference("http.response.timeout", 60)
 
 gecko_version = "v0.32.0"
 

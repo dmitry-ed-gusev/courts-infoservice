@@ -147,6 +147,9 @@ def scrap_courts(
     executor8 = ThreadPoolExecutor(
         max_workers=scraper_config.SCRAPER_CONFIG[8]["workers_count"]
     )
+    executor9 = ThreadPoolExecutor(
+        max_workers=scraper_config.SCRAPER_CONFIG[9]["workers_count"]
+    )
     for court in courts_config:
         if court["parser_type"] == "1":
             future = executor1.submit(parser_1.parse_page, court)
@@ -165,7 +168,7 @@ def scrap_courts(
         elif court["parser_type"] == "8":
             future = executor8.submit(parser_8.parse_page, court)
         elif court["parser_type"] == "9":
-            future = executor8.submit(parser_9.parse_page, court)
+            future = executor9.submit(parser_9.parse_page, court)
         else:
             continue
         futures.append(future)

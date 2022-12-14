@@ -37,7 +37,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 + str(page_num)
             )
             logger.debug(url)
-            time.sleep(random.randrange(0, 3))
+            time.sleep(random.randrange(2, 4))
             try:
                 page = session.get(url)
             except:
@@ -158,7 +158,9 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                         )
                         result_row["court_alias"] = court.get("alias")
                         result_row["case_link"] = url
-                        result.append(result_row)
+                        # check if row has case number
+                        if result_row["col3"] != "[]":
+                            result.append(result_row)
                 page_num += 1
     data_frame = convert_data_to_df(
         result, scraper_config.SCRAPER_CONFIG[7]["stage_mapping"]
