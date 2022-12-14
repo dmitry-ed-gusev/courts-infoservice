@@ -7,76 +7,69 @@
         - (list of settings) https://docs.djangoproject.com/en/4.1/ref/settings/
 
     Created:  Dmitrii Gusev, 16.10.2022
-    Modified: Dmitrii Gusev, 11.12.2022
+    Modified: Dmitrii Gusev, 14.12.2022
 """
 
 import os
+import sys
 import json
 import logging
+import environ
+import dj_database_url
 from pathlib import Path
-from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Project base directory. Use it for building paths inside the project like this: BASE_DIR / 'subdir'
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Used for a default title
-APP_TITLE = 'Все суды РФ'
-APP_NAME = 'Информация о судебных делах РФ'
+# Local/not local run
+LOCAL_RUN: bool = False
+# check if we run locally (nasty tech :))
+if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
+    print("[*] We're running locally!")
+    LOCAL_RUN = True
 
-# Default configuration .env file (default/fallback option)
+# Application title
+APP_TITLE = 'Все суды РФ'
+# Application name
+APP_NAME = 'Информация о судебных делах РФ'
+# Application encoding
+APP_ENCODING = 'UTF-8'
+# Default configuration .env file (default fallback option)
 DEFAULT_ENV_CONFIG: str = ".env.prod"
 # Default environment variable for configuration .env* file
-ENV_CONFIG_VARIABLE: str = 'COURTS_ENV_CONFIG'
+ENV_CONFIG_VAR: str = 'ENV_PATH'
 
+# setup some initial environment variables
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False),  # default value for DEBUG env variable
+    ENV_NAME=(str, '<not defined>'),  # default value for ENV_NAME env variable
+)
 
-# todo: https://github.com/joke2k/django-environ
-# todo: https://djangostars.com/blog/configuring-django-settings-best-practices/
-def get_db_config() -> dict:
-    # try to get config value from env variable (COURTS_ENV_CONFIG)
-    config_file: str = os.getenv(ENV_CONFIG_VARIABLE, '')
-    if not config_file:  # no env variable - fall back to default
-        config_file = DEFAULT_ENV_CONFIG
+# Take environment variables from .env.* file
+# env = environ.Env()  # init environment storage
 
-    # make path absolute (assume - we have specified relative file name/path)
-    config_file += str(BASE_DIR) + '/'
-
-    # debug output
-    message: str = (f"Using environment config: {config_file}\n"
-                    f"Current working dir: {os.getcwd()}")
-    print(message)
-
-    # load environment and create DB connection config dictionary
-    load_dotenv(dotenv_path=config_file, verbose=True)
-    db_config: dict = {
-        'default': {
-            'ENGINE': os.environ['DBMS_ENGINE'],  # mandatory, KeyError if no value
-            'NAME': 'production_db',
-            'USER': 'user',
-            'PASSWORD': 'password',
-            'HOST': 'db.example.com',
-            'PORT': '5432',
-            'OPTIONS': {
-                'sslmode': 'require'
-            }
-        }
-    }
-
-    print(f"Generated DB config: {db_config}")
-    return db_config
-
-# DB_CONFIG_JSON = str(BASE_DIR) + "/_db_config.json"
-# print(DB_CONFIG_JSON)
+# read environment from file specified by env variable or fallback to the default value
+env_config_file: str = os.path.join(BASE_DIR, env.str(ENV_CONFIG_VAR, DEFAULT_ENV_CONFIG))
+print(f"[*] Using environment config file: {env_config_file}")
+env.read_env(env_config_file)  # read env variables to already created Env object
+print(f"[*] Read the environment: {env('ENV_NAME')}")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-q)33m-yhqo*(%tx#z*zo()yj*3lq94-*5+5(1c@s^vd)q6tn6h"
+# Raises Django's ImproperlyConfigured exception if SECRET_KEY not in os.environ
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
+print(f"[*] DEBUG set to: {DEBUG}")
+
+# the current environment name (for some tech purposes)
+ENV_NAME = env('ENV_NAME')
 
 # todo: check this setting!
 ALLOWED_HOSTS = ['*', 'courts.itech-lab.ru', 'www.courts.itech-lab.ru',
@@ -152,20 +145,19 @@ WSGI_APPLICATION = "courtsinfo.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-# DATABASES = {
+DATABASES = {
+    # -- option I: usage of dj_database_url - it supports additional params (see in the call)
+    #  - reads os.environ['DATABASE_URL'] and leaves empty config if not found
+    'default': dj_database_url.config(
+        conn_max_age=600,
+        conn_health_checks=True,
+    ),
 
-#     "default": {  # simple sqlite database (testing)
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-
-# }
-
-# todo: put it somewhere?
-with open(DB_CONFIG_JSON, 'r') as f:
-    db_config = json.load(f)
-
-DATABASES = db_config
+    # -- option II: usage of django_environ
+    #  - reads os.environ['DATABASE_URL'] and raises ImproperlyConfigured exception if not found
+    #  - the db() method is an alias for db_url()
+    # 'default': env.db(),
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -260,7 +252,7 @@ LOGGING = {
             "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         },
 
-        'verbose': {
+        'verbose': {  # verbose experimental format
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
@@ -273,7 +265,7 @@ LOGGING = {
             "level": "DEBUG",
             "formatter": "standard",
             "class": "logging.StreamHandler",
-            "stream": "ext://sys.stdout",  # Default is stderr
+            "stream": "ext://sys.stdout",  # default is stderr
         },
 
         "console": {  # usual console handler
@@ -290,7 +282,7 @@ LOGGING = {
             "filename": str(BASE_DIR) + "/logs/log_info.log",
             "maxBytes": 10485760,  # 10MB
             "backupCount": 20,
-            "encoding": "UTF-8",
+            "encoding": APP_ENCODING,
         },
 
         "error_file_handler": {
@@ -300,7 +292,7 @@ LOGGING = {
             "filename": str(BASE_DIR) + "/logs/log_errors.log",
             "maxBytes": 10485760,  # 10MB
             "backupCount": 20,
-            "encoding": "UTF-8",
+            "encoding": APP_ENCODING,
         },
 
     },  # end of handlers block
@@ -309,56 +301,30 @@ LOGGING = {
 
         'django': {  # dedicated django logger - log only to console
             'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'level': env.str('DJANGO_LOG_LEVEL'),
             'propagate': False,
         },
 
-        'parso': {  # django shell parser/autocomplete, it worth to have it upper DEBUG
-            'level': 'INFO',  # todo: set to WARN?
+        'django.db.backends': {  # django DB backend logger
+            'handlers': ['console', 'std_file_handler'],
+            'level': env.str('DJANGO_DB_LOG_LEVEL'),
         },
 
-        "rallytool": {  # todo: logger for some library used
-            # 'handlers': ['default'],
-            "level": "DEBUG",
-            # 'propagate': False
+        'parso': {  # django shell parser/autocomplete, it worth to have it upper DEBUG (too verbose)
+            'level': 'INFO',  # todo: consider set it to WARN...
         },
 
         "__main__": {  # if __name__ == '__main__' - emergency case!!!
             "handlers": ["default"],
-            "level": "DEBUG",
+            "level": env.str('ROOT_LOG_LEVEL'),
             "propagate": False,
         },
 
     },  # end of loggers module
 
     "root": {  # root logger
-        "level": "DEBUG",  # todo: should be WARNING for PROD?
+        "level": env.str('ROOT_LOG_LEVEL'),
         "handlers": ["console", "std_file_handler", "error_file_handler"],
     },
 
 }  # end of LOGGING block
-
-# https://coderwall.com/p/uzhyca/quickly-setup-sql-query-logging-django
-# https://stackoverflow.com/questions/12027545/determine-if-django-is-running-under-the-development-server
-
-'''  # Leave off for now
-import sys
-if (len(sys.argv) >= 2 and sys.argv[1] == 'runserver'):
-    print('Running locally')
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-            }
-        },
-        'loggers': {
-            'django.db.backends': {
-                'handlers': ['console'],
-                'level': 'DEBUG',
-            },
-        }
-    }
-'''

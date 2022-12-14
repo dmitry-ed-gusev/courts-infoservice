@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+# -- django itself + related apps
 django = "*"
 djangorestframework = "*"
 django-extensions = "*"
@@ -12,10 +13,15 @@ django-filter = "*"
 django-taggit = "*"
 social-auth-app-django = "*"
 social-auth-core = "*"
+
+# -- manage django app env config
+dj-database-url = "*"
+django-environ = "*"
+python-dotenv = "*"
+
 markdown = "*"
 mysqlclient = "*"
 faker = "*"
-python-dotenv = "*"
 
 [dev-packages]
 ipykernel = "*"

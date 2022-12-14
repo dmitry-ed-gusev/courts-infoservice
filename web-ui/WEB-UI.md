@@ -9,19 +9,27 @@ Project's [TODO.md](../TODO.md) items.
 
 - [JS Data Tables](https://datatables.net/)
 - [Web Site Favicon Creation](https://favicon.io/)
+- [Configuring Django settings](https://djangostars.com/blog/configuring-django-settings-best-practices/)
+- [django-environ](https://github.com/joke2k/django-environ)
+- [django-environ docs](https://django-environ.readthedocs.io/en/latest/index.html)
+- [django sql queries logging](https://coderwall.com/p/uzhyca/quickly-setup-sql-query-logging-django)
+- [determine if django run on dev](https://stackoverflow.com/questions/12027545/determine-if-django-is-running-under-the-development-server)
 - ???
 
-### [REG.RU](https://reg.ru) Resources
+### Hosting [REG.RU](https://reg.ru) Resources
 
 - [Adding Domains / Subdomains](https://help.reg.ru/support/hosting/privyazka-domena-k-hostingu/poddomeny)
 - [SSH connect to hosting](https://help.reg.ru/support/hosting/dostupy-i-podklyucheniye-panel-upravleniya-ftp-ssh/rabota-po-ssh-na-virtualnom-hostinge)
 - [Django Setup on the hosting](https://help.reg.ru/support/hosting/php-asp-net-i-skripty/kak-ustanovit-django-na-hosting)
-- [???](link)
-- [???](link)
+- ???
 
 ## Deployment to hosting REG.RU
 
-1. Generate ssh key public/private pair - [ssh.com](https://www.ssh.com/academy/ssh/keygen)
+Before deployment, chech this [django deployment checklist](https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/)!  
+
+The following steps should be done before deployment as well:
+
+1. Generate ssh key public/private pair - see example here: [ssh.com](https://www.ssh.com/academy/ssh/keygen)
 2. Use command `ssh-copy-id -i ~/.ssh/id_rsa.pub <user>@<ip>` for copying the public key to the target host (see article above)
 3. Use script []() for deployment the site source to hosting.
 
@@ -45,13 +53,20 @@ TODO: look here -> [best practices](https://djangostars.com/blog/configuring-dja
 
 Web site uses main DB in read-only mode - no writes to actual tables. Also site uses it's own tables for authentication and tech purposes (see django and it's extensions docs).
 
-### Specify DBMS to use
+### Specify DBMS / Environment to use
 
-- if set environment variable **COURTS_ENV_CONFIG** - specified file will be loaded, relative path should be
+- if set environment variable **ENV_PATH** - specified file will be loaded, relative path should be
   used - it will be resolved according to the site root directory. Example:  
-  `export COURTS_ENV_CONFIG=.env.myenv`
+  `export ENV_PATH=.env.prod`
 - default/fallback option (env variable isn't set) - DBMS config will be loaded from **.env.prod** file in
   the current directory
+
+Example: `ENV_PATH=.env.myenv ./manage.py runserver` uses **BASE_DIR/.env.myenv** config file, while  
+  `./manage.py runserver` uses **BASE_DIR/.env.prod** default config file (\${BASE_DIR} - see the site settings.py file - base/root site dir).
+
+One more sample: `export ENV_PATH=.env.local.prod_db; python manage.py check`
+
+Strictly speaking, the environment file will be looked for inside the site's BASE_DIR.
 
 ### Inspect existing DB
 
