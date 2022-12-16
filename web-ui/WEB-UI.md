@@ -14,7 +14,8 @@ Project's [TODO.md](../TODO.md) items.
 - [django-environ docs](https://django-environ.readthedocs.io/en/latest/index.html)
 - [django sql queries logging](https://coderwall.com/p/uzhyca/quickly-setup-sql-query-logging-django)
 - [determine if django run on dev](https://stackoverflow.com/questions/12027545/determine-if-django-is-running-under-the-development-server)
-- ???
+- [django secret key generator](https://djecrety.ir/)
+- [how to gen django secret key](https://www.educative.io/answers/how-to-generate-a-django-secretkey)
 
 ### Hosting [REG.RU](https://reg.ru) Resources
 

@@ -7,12 +7,11 @@
         - (list of settings) https://docs.djangoproject.com/en/4.1/ref/settings/
 
     Created:  Dmitrii Gusev, 16.10.2022
-    Modified: Dmitrii Gusev, 14.12.2022
+    Modified: Dmitrii Gusev, 15.12.2022
 """
 
 import os
 import sys
-import json
 import logging
 import environ
 import dj_database_url
@@ -117,6 +116,23 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# Security setting for the CSRF qookies (as we have CsrfViewMiddleware installed/enabled)
+CSRF_COOKIE_SECURE = True
+
+# Security setting for the sessions qookies
+SESSION_COOKIE_SECURE = True
+
+# If set to True, the SecurityMiddleware redirects all non-HTTPS requests to HTTPS, may
+# cause infinite redirects/loops.
+# https://docs.djangoproject.com/en/4.1/ref/settings/#secure-ssl-redirect
+# todo: check - maybe - turn it off
+# todo: looks like should be set to True for PROD and False for DEV/LOCAL
+# SECURE_SSL_REDIRECT = True
+
+# todo: use with the accuracy!
+# see docs here: https://docs.djangoproject.com/en/4.1/ref/settings/#secure-hsts-seconds
+# SECURE_HSTS_SECONDS = 3600
+
 ROOT_URLCONF = "courtsinfo.urls"
 
 TEMPLATES = [
@@ -181,13 +197,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization: https://docs.djangoproject.com/en/4.1/topics/i18n/
 
 LANGUAGE_CODE = "ru"  # "en-us" <- original encoding
-
 TIME_ZONE = "EET"  # "UTC" <- default setting, EET - same as MSK -> GMT+3
-
 USE_I18N = True
-
 USE_L10N = True  # newly added
-
 USE_TZ = True
 
 
