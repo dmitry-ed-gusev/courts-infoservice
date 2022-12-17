@@ -8,7 +8,7 @@
 #            environment (pipenv shell).
 #
 #   Created:  Dmitrii Gusev, 04.10.2022
-#   Modified: Dmitrii Gusev, 18.11.2022
+#   Modified: Dmitrii Gusev, 17.12.2022
 #
 ###############################################################################
 
@@ -16,9 +16,9 @@
 set -euf -o pipefail
 
 # -- project modules directories
-SCRAPER_DIR='court_cases_scraper'
-BOT_DIR='telegram-bot'
-WEBUI_DIR='web-ui'
+SCRAPER_DIR='courts-scraper'
+BOT_DIR='courts-tele-bot'
+WEBUI_DIR='courts-web-ui'
 
 # -- verbose output mode
 VERBOSE="--verbose"
