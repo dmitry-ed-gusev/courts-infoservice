@@ -8,7 +8,7 @@ class DmCourtCases(models.Model):
     court_alias = models.CharField(max_length=50, blank=True, null=True)
     check_date = models.DateField(blank=True, null=True)
     section_name = models.CharField(max_length=1000, blank=True, null=True)
-    order_num = models.IntegerField(blank=True, null=True)
+    # order_num = models.IntegerField(blank=True, null=True)
     case_num = models.CharField(max_length=255, blank=True, null=True)
     hearing_time = models.CharField(max_length=50, blank=True, null=True)
     hearing_place = models.CharField(max_length=255, blank=True, null=True)
@@ -23,5 +23,5 @@ class DmCourtCases(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'dm_court_cases'
+        db_table = 'dm_v_court_cases'
         ordering = ['court_alias', 'court']

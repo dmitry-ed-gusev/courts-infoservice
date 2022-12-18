@@ -26,9 +26,10 @@
         Тип входа: {% if backends.associated %} GitHub {% else %} Local {% endif %}
     </pre>
     </p>
-    <p>Вы можете <a href="/accounts/logout">Выйти здесь</a>.</p>
+    <p>Вы можете <a href="/accounts/logout">выйти здесь</a>.</p>
     {% else %}
-        <br><br><br><p>Вы неавторизованы на сайте. Вы можете <a href="/accounts/login">Войти здесь</a>.</p>
+        <br><br><br><p>Вы неавторизованы на сайте. Вы можете <a href="/accounts/login">войти здесь</a>.</p>
     {% endif %}
+    Окружение: {{ settings.ENV_NAME }}
 
 {% endblock content %}

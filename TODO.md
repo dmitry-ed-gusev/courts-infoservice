@@ -36,6 +36,8 @@
 8. ~~Web UI: initially show the empty screen with the search form - once search performed - show results~~
 9. Make links from [Statistics] page to the courts details page
 10. На сайте поле Стадия выдает None для null значений из БД
+11. ~~Remove order_num field from site~~
+12. Do not show "-"/"None" instead of empty value
 
 ## Telegram Bot Improvements
 

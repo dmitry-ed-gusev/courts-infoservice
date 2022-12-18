@@ -37,7 +37,7 @@
       <tr>
         <th scope="col">Суд</th>
         <th scope="col">Дата проверки</th>
-        <th scope="col">Раздел/<br>Номер</th>
+        <th scope="col">Раздел</th>
         <th scope="col">Номер&nbsp;дела</th>
         <th scope="col">Время/<br>Место</th>
         <th scope="col">Детали&nbsp;дела</th>
@@ -54,16 +54,8 @@
           <th scope="row">{{ item.court }}</td>
           <td>{{ item.check_date|date }}</td>
           <td>
-            {% if not item.section_name or item.section_name == 'NULL' %}
-              -
-            {% else %}
+            {% if item.section_name and item.section_name != 'NULL' %}
               {{ item.section_name }}
-            {% endif %}
-            <br>
-            {% if not item.order_num or item.order_num == 'NULL' %}
-              -
-            {% else %}
-              {{ item.order_num }}
             {% endif %}
           </td>
           <td><a href="{{ item.case_link }}">{{ item.case_num }}</a></td>
@@ -75,9 +67,7 @@
             {% if item.decision_link and item.decision_link != 'NULL' %}
               <a href="{{ item.decision_link }}">{{ item.hearing_result }}</a>
             {% else %}
-              {% if not item.hearing_result or item.hearing_result == 'NULL' %}
-                -
-              {% else %}
+              {% if item.hearing_result and item.hearing_result != 'NULL' %}
                 {{ item.hearing_result }}
               {% endif %}
             {% endif %}

@@ -7,7 +7,7 @@
         - (list of settings) https://docs.djangoproject.com/en/4.1/ref/settings/
 
     Created:  Dmitrii Gusev, 16.10.2022
-    Modified: Dmitrii Gusev, 15.12.2022
+    Modified: Dmitrii Gusev, 18.12.2022
 """
 
 import os
@@ -43,8 +43,14 @@ ENV_CONFIG_VAR: str = 'ENV_PATH'
 # setup some initial environment variables
 env = environ.Env(
     # set casting, default value
-    DEBUG=(bool, False),  # default value for DEBUG env variable
+    DEBUG=(bool, False),  # default value for DEBUG env variable (False -> PROD)
     ENV_NAME=(str, '<not defined>'),  # default value for ENV_NAME env variable
+
+    # default security settings (enabled by default for PROD)
+    SECURE_SSL_REDIRECT=(bool, True),
+    SECURE_HSTS_SECONDS=(int, 3600),
+    SECURE_HSTS_INCLUDE_SUBDOMAINS=(bool, True),
+    SECURE_HSTS_PRELOAD=(bool, True),
 )
 
 # Take environment variables from .env.* file
@@ -71,8 +77,7 @@ print(f"[*] DEBUG set to: {DEBUG}")
 ENV_NAME = env('ENV_NAME')
 
 # todo: check this setting!
-ALLOWED_HOSTS = ['*', 'courts.itech-lab.ru', 'www.courts.itech-lab.ru',
-                 'courtsinfo.ru', 'www.courtsinfo.ru']
+ALLOWED_HOSTS = ['courtsinfo.ru', 'www.courtsinfo.ru']
 
 # Application definition (installed django apps)
 INSTALLED_APPS = [
@@ -125,9 +130,11 @@ SESSION_COOKIE_SECURE = True
 # If set to True, the SecurityMiddleware redirects all non-HTTPS requests to HTTPS, may
 # cause infinite redirects/loops.
 # https://docs.djangoproject.com/en/4.1/ref/settings/#secure-ssl-redirect
-# todo: check - maybe - turn it off
-# todo: looks like should be set to True for PROD and False for DEV/LOCAL
-# SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT')
+SECURE_HSTS_SECONDS = env('SECURE_HSTS_SECONDS')
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env('SECURE_HSTS_INCLUDE_SUBDOMAINS')
+SECURE_HSTS_PRELOAD = env('SECURE_HSTS_PRELOAD')
+
 
 # todo: use with the accuracy!
 # see docs here: https://docs.djangoproject.com/en/4.1/ref/settings/#secure-hsts-seconds

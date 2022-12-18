@@ -110,9 +110,6 @@ printf "\nProcessing Web UI\n"
 printf "We are here: [%s]\n" "$(pwd)"
 sleep 2
 setup_virtual_env
-# additional for Web UI - generate [requirements.txt] - for hosting
-printf "\nGenerating [requirements.txt] file\n"
-pipenv requirements > requirements.txt
 cd ..
 
 # -- we returned to the root project directory
