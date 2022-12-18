@@ -28,7 +28,7 @@ class DmCourtCases(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'dm_court_cases'
+        db_table = "dm_court_cases"
 
 
 class DmVCourtStats(models.Model):
@@ -40,4 +40,4 @@ class DmVCourtStats(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'dm_v_court_stats'
+        db_table = "dm_v_court_stats"

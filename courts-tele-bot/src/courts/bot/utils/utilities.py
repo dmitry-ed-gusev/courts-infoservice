@@ -8,20 +8,22 @@
     Modified:
 """
 
-import os
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
 
 def file_2_str(filename: str) -> str:
     """Read content from the provided file as string/text."""
-    log.debug(f'file_2_str(): reading content from file: [{filename}].')
+    log.debug(f"file_2_str(): reading content from file: [{filename}].")
 
     if not filename:  # fail-fast behaviour (empty path)
         raise ValueError("Specified empty file path!")
-    if not os.path.exists(os.path.dirname(filename)):  # fail-fast behaviour (non-existent path)
+    if not os.path.exists(
+        os.path.dirname(filename)
+    ):  # fail-fast behaviour (non-existent path)
         raise ValueError(f"Specified path [{filename}] doesn't exist!")
 
-    with open(filename, mode='r') as infile:
+    with open(filename, mode="r") as infile:
         return infile.read()
