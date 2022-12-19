@@ -8,7 +8,7 @@
 #            environment (pipenv shell).
 #
 #   Created:  Dmitrii Gusev, 04.10.2022
-#   Modified: Dmitrii Gusev, 16.10.2022
+#   Modified: Dmitrii Gusev, 17.12.2022
 #
 ###############################################################################
 
@@ -16,9 +16,9 @@
 set -euf -o pipefail
 
 # -- project modules directories
-SCRAPER_DIR='court_cases_scraper'
-BOT_DIR='court_cases_telegram_bot'
-WEBUI_DIR='court_cases_web-ui'
+SCRAPER_DIR='courts-scraper'
+BOT_DIR='courts-tele-bot'
+WEBUI_DIR='courts-web-ui'
 
 # -- verbose output mode
 VERBOSE="--verbose"
@@ -110,9 +110,6 @@ printf "\nProcessing Web UI\n"
 printf "We are here: [%s]\n" "$(pwd)"
 sleep 2
 setup_virtual_env
-# additional for Web UI - generate [requirements.txt] - for hosting
-printf "\nGenerating [requirements.txt] file\n"
-pipenv requirements > requirements.txt
 cd ..
 
 # -- we returned to the root project directory

@@ -1,0 +1,35 @@
+{% extends "base_menu.html" %}
+
+{% block content %}
+    <h1>{{ settings.APP_NAME }}</h1>
+
+    <p>
+        Данный сайт аггрегирует и визуализирует информацию о всех судах и судебных делах РФ.
+    </p>
+
+    <br>
+    <h3>Информация доступная в данный момент:</h3>
+    <ul>
+        <li><p><a href="{% url 'courts:main' %}">Суды и судебные дела РФ</a></p></li>
+        <li><p><a href="{% url 'stats:main' %}">Статистическая и техническая информация</a></p></li>
+        <li><p>продолжение следует...</p></li>
+    </ul>
+
+    {% if user.is_authenticated %}
+    <p>
+    <pre>
+    Вы вошли как:
+        Имя пользователя: {{ user.get_full_name }}
+        Email: {{ user.email }}
+        Id пользователя: {{ user.id }}
+        <!-- https://stackoverflow.com/questions/26879011/check-if-current-user-is-logged-in-using-any-django-social-auth-provider -->
+        Тип входа: {% if backends.associated %} GitHub {% else %} Local {% endif %}
+    </pre>
+    </p>
+    <p>Вы можете <a href="/accounts/logout">выйти здесь</a>.</p>
+    {% else %}
+        <br><br><br><p>Вы неавторизованы на сайте. Вы можете <a href="/accounts/login">войти здесь</a>.</p>
+    {% endif %}
+    Окружение: {{ settings.ENV_NAME }}
+
+{% endblock content %}
