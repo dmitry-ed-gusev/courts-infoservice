@@ -6,23 +6,23 @@
 
 CIS project consists of several modules:
 
-- Data Scraper and Parser
-- Telegram Bot
-- Web UI
+- CIS :: Data Scraper and Parser
+- CIS :: Telegram Bot
+- CIS :: Web UI
 
 See detailed descriptions of the mentioned modules below.
 
 ### Data Scraper and Parser
 
-Perform scraping necessary data from various data sources - courts web sites. See detailed info about Scraper and Parser [here](/court_cases_scraper/SCRAPER.md)
+Perform scraping necessary data from various data sources - courts web sites. See detailed info about Scraper and Parser [here](/courts-scraper/SCRAPER.md)
 
 ### Telegram Bot
 
-Telegram Bot is the essential part of the CIS project. See detailed info [here](/telegram-bot/TELE-BOT.md)
+Telegram Bot is the essential part of the CIS project. See detailed info [here](/courts-tele-bot/TELE-BOT.md)
 
 ### Web UI
 
-Simple web interface (site) for visualisation of data. See detailed info [here](/web-ui/WEB-UI.md)
+Simple web interface (site) for visualisation of data. See detailed info [here](/courts-web-ui/WEB-UI.md)
 
 ## Project Technical Details
 

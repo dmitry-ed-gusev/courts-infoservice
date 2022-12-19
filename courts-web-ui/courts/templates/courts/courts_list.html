@@ -59,10 +59,23 @@
             {% endif %}
           </td>
           <td><a href="{{ item.case_link }}">{{ item.case_num }}</a></td>
-          <td>{{ item.hearing_time }}<br>{{ item.hearing_place }}</td>
+          <td>
+            {{ item.hearing_time }}
+            {% if item.hearing_place and item.hearing_place != 'NULL' %}
+              <br>{{ item.hearing_place }}
+            {% endif %}
+          </td>
           <td>{{ item.case_info }}</td>
-          <td>{{ item.stage }}</td>
-          <td>{{ item.judge }}</td>
+          <td>
+            {% if item.stage and item.stage != 'NULL' %}
+              {{ item.stage }}
+            {% endif %}
+          </td>
+          <td>
+            {% if item.judge and item.judge != 'NULL' %}
+              {{ item.judge }}
+            {% endif %}
+          </td>
           <td>
             {% if item.decision_link and item.decision_link != 'NULL' %}
               <a href="{{ item.decision_link }}">{{ item.hearing_result }}</a>

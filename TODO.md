@@ -30,17 +30,17 @@
 2. ~~Web UI: убрать ID со страницы + убрать алиас суда~~
 3. Web UI: кнопка на сайте добавляющая подписку в боте (!!!)
 4. Web UI: статистика - новое поле - дата обновления
-5. Web UI: add build/deployment script(s) - automation
+5. ~~Web UI: add build/deployment script(s) - automation~~
 6. Web UI: switch to the latest version of Bootstrap Framework (5.2 - ?)
-7. Web UI: proper serving of the static files
+7. ~~Web UI: proper serving of the static files~~
 8. ~~Web UI: initially show the empty screen with the search form - once search performed - show results~~
 9. Make links from [Statistics] page to the courts details page
-10. На сайте поле Стадия выдает None для null значений из БД
+10. ~~На сайте поле Стадия выдает None для null значений из БД~~
 11. ~~Remove order_num field from site~~
-12. Do not show "-"/"None" instead of empty value
+12. ~~Do not show "-"/"None" instead of empty value~~
 
 ## Telegram Bot Improvements
 
-1. TeleBot: dockerize (create docker file for the bot)
+1. ~~TeleBot: dockerize (create docker file for the bot)~~
 2. TeleBot: сделать sh/exe для запуска бота просто из консоли, чтобы pycharm не жрал ресурсы
 3. TeleBot: deployment to the k8s/microk8s (see: https://microk8s.io/)
