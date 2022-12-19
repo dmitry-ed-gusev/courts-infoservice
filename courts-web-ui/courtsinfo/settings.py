@@ -7,7 +7,7 @@
         - (list of settings) https://docs.djangoproject.com/en/4.1/ref/settings/
 
     Created:  Dmitrii Gusev, 16.10.2022
-    Modified: Dmitrii Gusev, 18.12.2022
+    Modified: Dmitrii Gusev, 19.12.2022
 """
 
 import os
@@ -53,9 +53,6 @@ env = environ.Env(
     SECURE_HSTS_PRELOAD=(bool, True),
 )
 
-# Take environment variables from .env.* file
-# env = environ.Env()  # init environment storage
-
 # read environment from file specified by env variable or fallback to the default value
 env_config_file: str = os.path.join(BASE_DIR, env.str(ENV_CONFIG_VAR, DEFAULT_ENV_CONFIG))
 print(f"[*] Using environment config file: {env_config_file}")
@@ -76,8 +73,8 @@ print(f"[*] DEBUG set to: {DEBUG}")
 # the current environment name (for some tech purposes)
 ENV_NAME = env('ENV_NAME')
 
-# todo: check this setting!
-ALLOWED_HOSTS = ['courtsinfo.ru', 'www.courtsinfo.ru']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', str)  # will fail if no such variable set!
+print(f"[*] Allowed hosts: {ALLOWED_HOSTS}")
 
 # Application definition (installed django apps)
 INSTALLED_APPS = [
@@ -123,22 +120,16 @@ MIDDLEWARE = [
 
 # Security setting for the CSRF qookies (as we have CsrfViewMiddleware installed/enabled)
 CSRF_COOKIE_SECURE = True
-
 # Security setting for the sessions qookies
 SESSION_COOKIE_SECURE = True
-
 # If set to True, the SecurityMiddleware redirects all non-HTTPS requests to HTTPS, may
 # cause infinite redirects/loops.
-# https://docs.djangoproject.com/en/4.1/ref/settings/#secure-ssl-redirect
+#   see docs: https://docs.djangoproject.com/en/4.1/ref/settings/#secure-ssl-redirect
 SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT')
+#   see docs here: https://docs.djangoproject.com/en/4.1/ref/settings/#secure-hsts-seconds
 SECURE_HSTS_SECONDS = env('SECURE_HSTS_SECONDS')
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env('SECURE_HSTS_INCLUDE_SUBDOMAINS')
 SECURE_HSTS_PRELOAD = env('SECURE_HSTS_PRELOAD')
-
-
-# todo: use with the accuracy!
-# see docs here: https://docs.djangoproject.com/en/4.1/ref/settings/#secure-hsts-seconds
-# SECURE_HSTS_SECONDS = 3600
 
 ROOT_URLCONF = "courtsinfo.urls"
 
@@ -163,7 +154,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "courtsinfo.wsgi.application"
-
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -205,8 +195,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "ru"  # "en-us" <- original encoding
 TIME_ZONE = "EET"  # "UTC" <- default setting, EET - same as MSK -> GMT+3
-USE_I18N = True
-USE_L10N = True  # newly added
+USE_I18N = True  # (INTERNALIZATION)
+USE_L10N = True  # newly added (LOCALIZATION)
 USE_TZ = True
 
 
@@ -327,10 +317,12 @@ LOGGING = {
         'django.db.backends': {  # django DB backend logger
             'handlers': ['console', 'std_file_handler'],
             'level': env.str('DJANGO_DB_LOG_LEVEL'),
+            'propagate': False,
         },
 
         'parso': {  # django shell parser/autocomplete, it worth to have it upper DEBUG (too verbose)
             'level': 'INFO',  # todo: consider set it to WARN...
+            'propagate': False,
         },
 
         "__main__": {  # if __name__ == '__main__' - emergency case!!!
