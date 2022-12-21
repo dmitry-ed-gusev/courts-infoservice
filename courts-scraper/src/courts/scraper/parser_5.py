@@ -29,8 +29,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             time.sleep(3)
     result = []
     page_num = 1
-    pages_total = 1
-    order_num = 0
+    pages_total = 0
     time.sleep(1)
     while True:
         url = (
@@ -42,6 +41,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             + "&page="
             + str(page_num)
         )
+        logger.debug(url + ", pages " + str(pages_total))
         retries = 0
         while True:
             retries += 1
@@ -69,7 +69,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 # appending row
                 else:
                     result_row = {}
-                    order_num += 1
                     # td
                     for idx_r, row in enumerate(section.find_all("td")):
                         if idx_r == 2:
@@ -88,7 +87,6 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                     result_row["check_date"] = check_date
                     result_row["court"] = court.get("title")
                     result_row["court_alias"] = court.get("alias")
-                    result_row["order_num"] = order_num
                     result.append(result_row)
         if page_num == 1:
             try:
@@ -97,22 +95,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 )
             except:
                 None
-        logger.debug(driver.current_url + ", pages " + str(pages_total))
         if page_num < pages_total:
             page_num += 1
         else:
             break
-        # closes 10 windows and open new driver
-        if page_num % 10 == 0:
-            driver.close()
-            while True:
-                try:
-                    driver = webdriver.Firefox(
-                        service=firefox_service, options=selenium_config.firefox_options
-                    )
-                    break
-                except:
-                    time.sleep(3)
 
     driver.close()
     driver.quit()

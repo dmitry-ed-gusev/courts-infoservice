@@ -15,9 +15,5 @@ from config_court_scrap_config cfg
         	and ddim.db_date = log.check_date
     where not skip
         and (log.court is null
-        	 or (current_date > cast(log.load_dttm as date)
-        			and current_time >= cast(cfg.refresh_time as time)
-        			and adddate(log.load_dttm, interval 12 hour) > now()
-        		)
-        	  or adddate(now(), interval -1 day) > log.load_dttm
+        	  or adddate(now(), interval -20 hour) > log.load_dttm
         	);

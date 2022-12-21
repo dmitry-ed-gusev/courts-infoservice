@@ -20,7 +20,7 @@ from courts.scraper import (
 from dotenv import load_dotenv
 from loguru import logger
 
-test_mode = 101
+test_mode = 5
 check_date = "13.12.2022"
 check_date_dt = datetime.strptime(check_date, "%d.%m.%Y")
 

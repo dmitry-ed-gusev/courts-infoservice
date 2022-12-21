@@ -1,3 +1,4 @@
+import math
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -303,26 +304,23 @@ def load_links_to_stage(data_frame: DataFrame, db_config: dict[str, str]) -> Non
     connection.close()
 
 
-def deactivate_outdated_bot_log_entries(
-    db_config: dict[str, str], court_alias: str, check_date: datetime
-) -> None:
+def deactivate_outdated_bot_log_entries(db_config: dict[str, str]) -> None:
     """calls log deactivation procedure"""
     engine = get_db_engine(db_config)
 
     logger.debug("Connected. Deactivating tg bot log entries.")
     connection = engine.connect()
-    sql = sa_text(
-        "call config_p_deactivate_outdated_tg_bot_log_entries(:court_alias, :check_date)"
-    )
-    params = {"court_alias": court_alias, "check_date": check_date}
-    connection.execute(sql, params)
+    sql = sa_text("call config_p_deactivate_outdated_tg_bot_log_entries()")
+    connection.execute(sql)
     connection.commit()
     connection.close()
     logger.debug("Deactivation tg bot log entries completed.")
 
 
 def transfer_dm_from_wrk_to_host(
-    db_config_wrk: dict[str, str], db_config: dict[str, str], tables_list: list[dict[str, str]]
+    db_config_wrk: dict[str, str],
+    db_config: dict[str, str],
+    tables_list: list[dict[str, str]],
 ) -> None:
     """transfer data marts from work db to hosting dn"""
     engine_wrk = get_db_engine(db_config_wrk)
@@ -338,7 +336,9 @@ def transfer_dm_from_wrk_to_host(
         logger.info(f"Transferring data: {table}")
         if table_dict.get("split_key"):
             key_name = table_dict["split_key"]
-            sql = sa_text(f"select min({key_name}) as min_val, max({key_name}) as max_val from {table}")
+            sql = sa_text(
+                f"select min({key_name}) as min_val, max({key_name}) as max_val from {table}_old"
+            )
             result = connection_wrk.execute(sql)
             min_val = max_val = 0
             for row in result:
@@ -346,23 +346,48 @@ def transfer_dm_from_wrk_to_host(
                 max_val: int = row[1]
                 break
 
-            parts: int = round((max_val - min_val) / scraper_config.BULK_SIZE_ROWS)
+            parts: int = math.ceil((max_val - min_val) / scraper_config.BULK_SIZE_ROWS)
             for part in range(0, parts):
                 low_bound = min_val + part * scraper_config.BULK_SIZE_ROWS
                 up_bound = min_val + (1 + part) * scraper_config.BULK_SIZE_ROWS
-                logger.info(f"Reading {str(part+1)} of {str(parts+1)}: {key_name} keys between {low_bound} and {up_bound}...")
-                sql = sa_text(f"select * from {table} where {key_name} >= {low_bound} and {key_name} < {up_bound}")
+                logger.info(
+                    f"Reading chunk {str(part+1)} of {str(parts+1)}: {key_name} keys between {low_bound} and {up_bound}..."
+                )
+                sql = sa_text(
+                    f"select * from {table} where {key_name} >= {low_bound} and {key_name} < {up_bound}"
+                )
                 source_data = read_sql_query(sql, connection_wrk)
                 logger.info(f"Read {str(len(source_data))} rows")
-                source_data.to_sql(table + "_old", connection, index=False, if_exists="append")
+                source_data.to_sql(
+                    table + "_old", connection, index=False, if_exists="append"
+                )
                 connection.commit()
         else:
             source_data = read_sql_table(table, connection_wrk)
             logger.info(f"Read {str(len(source_data))} rows")
-            source_data.to_sql(table + "_old", connection, index=False, if_exists="append")
+            source_data.to_sql(
+                table + "_old", connection, index=False, if_exists="append"
+            )
             connection.commit()
 
-        logger.info("Data loaded to target db. Renaming tables...")
+        logger.info("Data loaded to target db.")
+
+    connection.close()
+    connection_wrk.close()
+
+
+def switch_dm_tables(
+    db_config_wrk: dict[str, str],
+    db_config: dict[str, str],
+    tables_list: list[dict[str, str]],
+) -> None:
+    engine_wrk = get_db_engine(db_config_wrk)
+    engine = get_db_engine(db_config)
+    connection = engine.connect()
+    connection_wrk = engine_wrk.connect()
+    logger.info("Renaming tables...")
+    for table_dict in tables_list:
+        table = table_dict["table_name"]
         sql = sa_text(f"rename table {table}_old to {table}_new")
         connection.execute(sql)
         sql = sa_text(f"rename table {table} to {table}_old")

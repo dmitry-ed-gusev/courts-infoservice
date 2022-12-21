@@ -1,5 +1,4 @@
 """scrap vsrf ru"""
-import random
 import re
 import time
 
