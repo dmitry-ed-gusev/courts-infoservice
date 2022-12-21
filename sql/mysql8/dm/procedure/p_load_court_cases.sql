@@ -3,11 +3,11 @@ drop procedure if exists dm_p_load_court_cases;
 create procedure dm_p_load_court_cases ()
 begin
     --delete data from dm
-    truncate table dm_court_cases;
+    truncate table dm_court_cases_old;
 
     commit;
 
-    insert into dm_court_cases (court, court_alias, check_date, section_name, order_num, case_num, hearing_time,
+    insert into dm_court_cases_old (court, court_alias, check_date, section_name, order_num, case_num, hearing_time,
         hearing_place, case_info, stage, judge, hearing_result, decision_link, case_link, row_hash, load_dttm)
     select lsat.court, hub.court_alias, link.check_date, lsat.section_name,
         link.order_num, hub.case_num, lsat.hearing_time,

@@ -89,8 +89,6 @@ def scrap_courts_no_parallel(
                 court_config["alias"],
                 court_config["check_date"],
             )
-            # db_tools.load_courts_to_dm(db_config, court_config["alias"], court_config["check_date"])
-            # db_tools.deactivate_outdated_bot_log_entries(db_config, court_config["alias"], court_config["check_date"])
         if status == "success":
             logger.info(
                 "Parser "
@@ -279,8 +277,11 @@ def main() -> None:
     db_tools.etl_load_court_cases_dv(db_config_wrk)
     db_tools.etl_load_court_cases_dm(db_config_wrk)
 
-    db_tools.transfer_dm_from_wrk_to_host(
-        db_config_wrk, db_config, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
+    # db_tools.transfer_dm_from_wrk_to_host(
+    #    db_config_wrk, db_config, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
+    # )
+    db_tools.switch_dm_tables(
+        db_config_wrk, db_config_wrk, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
     )
     db_tools.deactivate_outdated_bot_log_entries(db_config)
     db_tools.clean_stage_courts_table(db_config_wrk)
