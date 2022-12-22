@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from loguru import logger
-from pandas import DataFrame, read_sql_table, read_sql_query
+from pandas import DataFrame, read_sql_query, read_sql_table
 from sqlalchemy import Engine, create_engine
 from sqlalchemy import text as sa_text
 
-from court_cases_scraper.src.courts.config import db_init_config, scraper_config
+from scraper.config import db_init_config, scraper_config
 
 
 def get_db_engine(db_config: dict[str, str]) -> Engine:

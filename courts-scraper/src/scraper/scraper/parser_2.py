@@ -4,11 +4,12 @@ import re
 import time
 
 from bs4 import BeautifulSoup
-from courts.config import scraper_config
-from courts.db.db_tools import convert_data_to_df
-from courts.web.web_client import WebClient
 from loguru import logger
 from pandas import DataFrame
+
+from scraper.config import scraper_config
+from scraper.db.db_tools import convert_data_to_df
+from scraper.web.web_client import WebClient
 
 
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:

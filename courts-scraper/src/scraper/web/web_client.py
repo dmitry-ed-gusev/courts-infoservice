@@ -17,10 +17,9 @@
 """
 
 import logging
-from typing import Any, AnyStr, Dict, List, Tuple
+from typing import Dict, List
 
 import requests
-from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
 from courts.utils.utilities import threadsafe_function
 from fake_useragent import UserAgent
 from requests import Response

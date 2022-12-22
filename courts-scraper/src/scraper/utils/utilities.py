@@ -11,7 +11,7 @@
 import logging
 import threading
 
-from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
+from scraper.defaults import MSG_MODULE_ISNT_RUNNABLE
 
 log = logging.getLogger(__name__)
 

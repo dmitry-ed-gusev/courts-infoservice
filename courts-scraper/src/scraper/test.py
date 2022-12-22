@@ -5,20 +5,10 @@ don't include in setup
 import os
 from datetime import datetime
 
-from courts.db import db_tools
-from courts.scraper import (
-    parser_1,
-    parser_2,
-    parser_3,
-    parser_4,
-    parser_5,
-    parser_6,
-    parser_7,
-    parser_8,
-    parser_9,
-)
 from dotenv import load_dotenv
-from loguru import logger
+
+from scraper.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5,
+                             parser_6, parser_7, parser_8, parser_9)
 
 test_mode = 5
 check_date = "13.12.2022"

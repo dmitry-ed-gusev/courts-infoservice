@@ -17,9 +17,6 @@ import pymysql
 from courts.bot import VERSION
 from courts.bot.config import bot_config
 from dotenv import load_dotenv
-from prettytable import PrettyTable
-from pymysql.connections import Connection
-from pymysql.cursors import Cursor
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
@@ -31,8 +28,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # environment file to load (default fallback)
-# ENV_SETTINGS_FILE = ".env.local"
-ENV_SETTINGS_FILE = ".env.prod"
+ENV_SETTINGS_FILE = ".env.dev"
+# ENV_SETTINGS_FILE = ".env.prod"
 
 # environment variable for environment file name to load
 ENV_VAR_FOR_SETTINGS_FILE = "COURTS_BOT_SETTINGS"
@@ -52,8 +49,6 @@ def form_message_from_db_response(row) -> str:
     )
     if row[2] and len(row[2]) > 0:
         message = message + "\nКатегория: " + str(row[2])
-    if row[3]:
-        message = message + "\nПорядковый номер: " + str(row[3])
     if row[5] and len(row[5]) > 0:
         message = message + "\nВремя слушания: " + str(row[5])
     if row[6] and len(row[6]) > 0:

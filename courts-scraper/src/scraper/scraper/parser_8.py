@@ -4,15 +4,16 @@ import random
 import time
 
 from bs4 import BeautifulSoup
-from courts.common.cookiesArbitrary import CookiesArbitrary
-from courts.config import scraper_config, selenium_config
-from courts.db.db_tools import convert_data_to_df
 from loguru import logger
 from pandas import DataFrame
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from seleniumrequests import Firefox
 from webdriver_manager.chrome import ChromeDriverManager
+
+from scraper.common.cookiesArbitrary import CookiesArbitrary
+from scraper.config import scraper_config, selenium_config
+from scraper.db.db_tools import convert_data_to_df
 
 
 def parse_arbitrary_json(court: dict, json_data: json) -> list[dict[str, str]]:

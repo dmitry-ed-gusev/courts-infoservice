@@ -8,22 +8,14 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from courts.config import scraper_config
-from courts.db import db_tools
-from courts.scraper import (
-    parser_1,
-    parser_2,
-    parser_3,
-    parser_4,
-    parser_5,
-    parser_6,
-    parser_7,
-    parser_8,
-    parser_9,
-)
-from courts.utils.utilities import threadsafe_function
 from dotenv import load_dotenv
 from loguru import logger
+
+from scraper.config import scraper_config
+from scraper.db import db_tools
+from scraper.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5,
+                             parser_6, parser_7, parser_8, parser_9)
+from scraper.utils.utilities import threadsafe_function
 
 logger.remove()
 # setup for multithreading processing
