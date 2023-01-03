@@ -217,8 +217,19 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
     conn = get_mysql_conn()
     cursor = conn.cursor()
     cursor.execute(
-        "select account_id, case_num, court, add_dttm "
-        "from config_telegram_bot_subscriptions"
+        """
+        select account_id, case_num, court, min(add_dttm) as add_dttm
+        from (
+            select account_id, case_num, court, add_dttm 
+            from config_telegram_bot_subscriptions
+            union all
+            select tal.account_id, ws.case_num, ws.court, ws.add_dttm
+            from config_telegram_bot_account_link tal
+                join config_website_subscriptions ws
+                    on tal.username = ws.username
+        ) x
+        group by account_id, case_num, court
+        """
     )
     subs = cursor.fetchall()
 
