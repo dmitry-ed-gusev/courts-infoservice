@@ -44,9 +44,9 @@ begin
 		    end_dttm,
 		    max(begin_dttm) over (partition by court_case_l_id order by begin_dttm rows between 1 following and 1 following) as new_end_dttm
 	    from dv_court_cases_ls
+	    where end_dttm is null
     ) ds
-    where new_end_dttm is not null
-        and end_dttm is null;
+    where new_end_dttm is not null;
 
     update dv_court_cases_ls tgt
         join temp_dv_court_cases_ls_dates src

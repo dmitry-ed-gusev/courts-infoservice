@@ -20,7 +20,7 @@ import logging
 from typing import Dict, List
 
 import requests
-from courts.utils.utilities import threadsafe_function
+from scraper.utils.utilities import threadsafe_function
 from fake_useragent import UserAgent
 from requests import Response
 from requests.adapters import HTTPAdapter, Retry
