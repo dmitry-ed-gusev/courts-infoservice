@@ -249,11 +249,9 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                             and nlog.inactive_flag = false
                     )
                 order by dm.check_date asc
-                limit %(limit)s
             """,
             {
                 "case_num": subscription[1],
-                "limit": bot_config.OUTPUT_LIMIT,
                 "court": subscription[2],
                 "court_like": f"%{subscription[2]}%",
                 "sub_dttm": subscription[3],
