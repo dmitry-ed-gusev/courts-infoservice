@@ -65,7 +65,7 @@ Web site uses main DB in read-only mode - no writes to actual tables. Also site 
 Example: `ENV_PATH=.env.myenv ./manage.py runserver` uses **BASE_DIR/.env.myenv** config file, while  
   `./manage.py runserver` uses **BASE_DIR/.env.prod** default config file (\${BASE_DIR} - see the site settings.py file - base/root site dir).
 
-One more sample: `export ENV_PATH=.env.local.prod_db; python manage.py check`
+One more sample: `export ENV_PATH=.env.local.prod_db; python manage.py check` Note 
 
 Strictly speaking, the environment file will be looked for inside the site's BASE_DIR.
 

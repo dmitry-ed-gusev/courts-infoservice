@@ -58,7 +58,7 @@
               {{ item.section_name }}
             {% endif %}
           </td>
-          <td><a href="{{ item.case_link }}">{{ item.case_num }}</a></td>
+          <td><a href="{{ item.case_link }}" target="_blank">{{ item.case_num }}</a></td>
           <td>
             {{ item.hearing_time }}
             {% if item.hearing_place and item.hearing_place != 'NULL' %}
@@ -78,7 +78,7 @@
           </td>
           <td>
             {% if item.decision_link and item.decision_link != 'NULL' %}
-              <a href="{{ item.decision_link }}">{{ item.hearing_result }}</a>
+              <a href="{{ item.decision_link }}" target="_blank">{{ item.hearing_result }}</a>
             {% else %}
               {% if item.hearing_result and item.hearing_result != 'NULL' %}
                 {{ item.hearing_result }}
