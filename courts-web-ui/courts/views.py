@@ -40,7 +40,8 @@ class CourtsListView(LoginRequiredMixin, ListView):
             query.add(Q(case_num__icontains=strval), Q.OR)
             query.add(Q(case_info__icontains=strval), Q.OR)
             query.add(Q(judge__icontains=strval), Q.OR)
-            object_list = DmCourtCases.objects.filter(query).select_related().distinct()
+            # object_list = DmCourtCases.objects.filter(query).select_related().distinct()
+            object_list = DmCourtCases.objects.filter(query).select_related()
 
             # found objects list size
             log.debug(f"Objects list size: {len(object_list)}")
