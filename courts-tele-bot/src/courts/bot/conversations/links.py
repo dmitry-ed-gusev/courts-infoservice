@@ -60,7 +60,24 @@ async def conv_links(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     """Link conversation."""
     query = update.callback_query
     await query.answer()
+    account_id = str(query.from_user.id)
+    conn = get_mysql_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        """select username 
+           from config_telegram_bot_account_link  
+           where account_id = %(account_id)s 
+        """,
+        {"account_id": account_id},
+    )
+    result = cursor.fetchall()
+
     message = "Для привязки аккаунта введите имя пользователя."
+    if len(result) > 0:
+        row = result[0]
+        message += f"\nЭтот чат связан с аккаунтом {row[0]}"
+    else:
+        message += f"\nЧат не связан с аккаунтом сайта."
 
     keyboard = [
         [

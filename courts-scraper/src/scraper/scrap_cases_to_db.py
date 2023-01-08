@@ -5,6 +5,7 @@ import os
 import sys
 import threading
 import time
+import argparse
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime
 
@@ -13,8 +14,17 @@ from loguru import logger
 
 from scraper.config import scraper_config
 from scraper.db import db_tools
-from scraper.parsers import (parser_1, parser_2, parser_3, parser_4, parser_5,
-                             parser_6, parser_7, parser_8, parser_9)
+from scraper.parsers import (
+    parser_1,
+    parser_2,
+    parser_3,
+    parser_4,
+    parser_5,
+    parser_6,
+    parser_7,
+    parser_8,
+    parser_9,
+)
 from scraper.utils.utilities import threadsafe_function
 
 logger.remove()
@@ -233,6 +243,29 @@ def scrap_courts(
                 time.sleep(5)
 
 
+def parse_args() -> argparse.Namespace:
+    """Parser for command-line options, arguments and sub-commands."""
+
+    parser = argparse.ArgumentParser(
+        prog="Courts Info Scraper",
+        description="Scraps courts info",
+    )
+    parser.add_argument(
+        "--start_date", help="Date to parse from, format YYYY-MM-DD", type=str
+    )
+    parser.add_argument("--end_date", help="Date to parse to, YYYY-MM-DD", type=str)
+    parser.add_argument(
+        "--retry",
+        help="Retry mode - only failed steps from last load will be triggered",
+        type=bool,
+        default=False,
+    )
+    parser.add_argument("--env", help="Environment name", type=str, choices=["dev", "prod"], default="dev")
+    parsed_args = parser.parse_args()
+
+    return parsed_args
+
+
 def main() -> None:
     """main class"""
     # add file logger
@@ -242,16 +275,10 @@ def main() -> None:
     logger.add(sys.stderr, level="DEBUG")
     logger.add(log_file_name, encoding="utf-8", retention="7 days")
 
+    args = parse_args()
+
     # Load environment variables from .env_hosting file from the project root dir
-    load_dotenv()
-    db_config = {
-        "host": os.environ["MYSQL_HOST"],
-        "port": os.environ["MYSQL_PORT"],
-        "user": os.environ["MYSQL_USER"],
-        "passwd": os.environ["MYSQL_PASS"],
-        "db": os.environ["MYSQL_DB"],
-        "engine_type": "mysql",
-    }
+    load_dotenv(dotenv_path=f".env_{args.env}")
     db_config_wrk = {
         "host": os.environ["MYSQL_HOST_WRK"],
         "port": os.environ["MYSQL_PORT_WRK"],
@@ -260,7 +287,13 @@ def main() -> None:
         "db": os.environ["MYSQL_DB_WRK"],
         "engine_type": "mysql",
     }
-    courts_config = db_tools.read_courts_config(db_config_wrk)
+
+    courts_config = db_tools.read_courts_config(
+        db_config=db_config_wrk,
+        in_start_date=args.start_date,
+        in_end_date=args.end_date,
+        retry=args.retry,
+    )
 
     scrap_courts(courts_config, db_config_wrk)
     # scrap_courts_no_parallel(courts_config, db_config_wrk)
@@ -273,9 +306,9 @@ def main() -> None:
     #    db_config_wrk, db_config, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
     # )
     db_tools.switch_dm_tables(
-        db_config_wrk, db_config_wrk, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
+       db_config_wrk, db_config_wrk, scraper_config.DM_COURT_CASES_TABLES_TO_TRANSFER
     )
-    db_tools.deactivate_outdated_bot_log_entries(db_config)
+    db_tools.deactivate_outdated_bot_log_entries(db_config_wrk)
     db_tools.clean_stage_courts_table(db_config_wrk)
 
 

@@ -15,4 +15,5 @@ case_link varchar(500),
 row_hash varchar(100) not null,
 load_dttm datetime not null default now(),
 PRIMARY KEY (court_case_l_id, begin_dttm)
-);
+)
+ROW_FORMAT=COMPRESSED;

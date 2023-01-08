@@ -24,4 +24,6 @@ begin
     group by hub.court_case_id,
         stg.check_date,
         stg.order_num;
+
+    analyze table dv_court_cases_l;
 end;

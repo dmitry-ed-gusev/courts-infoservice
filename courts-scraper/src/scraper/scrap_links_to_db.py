@@ -14,8 +14,16 @@ from pandas import DataFrame, concat
 
 from scraper.config.scraper_config import SCRAPER_CONFIG
 from scraper.db import db_tools
-from scraper.scraper import (parser_1, parser_2, parser_3, parser_4, parser_5,
-                             parser_6, parser_8, parser_9)
+from scraper.scraper import (
+    parser_1,
+    parser_2,
+    parser_3,
+    parser_4,
+    parser_5,
+    parser_6,
+    parser_8,
+    parser_9,
+)
 from scraper.utils.utilities import threadsafe_function
 
 logger.remove()

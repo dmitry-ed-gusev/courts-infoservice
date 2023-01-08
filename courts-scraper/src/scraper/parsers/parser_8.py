@@ -2,6 +2,7 @@
 import json
 import random
 import time
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 from loguru import logger
@@ -94,6 +95,11 @@ def parse_arbitrary_json(court: dict, json_data: json) -> list[dict[str, str]]:
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """request json with cookie and parse response"""
     conf = CookiesArbitrary()
+    current_hour = int(datetime.now().strftime("%H"))
+    if 0 <= current_hour < 9:
+        additional_timeout = 2
+    else:
+        additional_timeout = 0
 
     result = []
     check_date = court.get("check_date").strftime("%Y-%m-%d")
@@ -138,7 +144,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             status_code = response.status_code
             json_data = json.loads(response.content)
         except Exception as e:
-            time.sleep(random.randrange(2, 3))
+            time.sleep(random.randrange(2, 3) + additional_timeout)
             status_code = -1
         if status_code == 200:
             break
@@ -158,7 +164,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 + str(i + 1)
                 + " of 10."
             )
-            time.sleep(random.randrange(3, 4))
+            time.sleep(random.randrange(3, 4) + additional_timeout)
             data = (
                 '{"needConfirm":false,"DateFrom":"'
                 + check_date
@@ -179,7 +185,7 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                         "POST", url_address, data=data, headers=conf.headers
                     )
                 except Exception as e:
-                    time.sleep(random.randrange(3, 4))
+                    time.sleep(random.randrange(3, 4) + additional_timeout)
                     status_code = -1
                 status_code = response.status_code
                 if status_code == 200:

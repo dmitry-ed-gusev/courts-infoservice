@@ -14,7 +14,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from telegram import Update, MenuButtonDefault
+from telegram import Update
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -28,7 +28,7 @@ from telegram.ext import (
 from courts.bot import VERSION
 from courts.bot.config import bot_config
 from courts.bot.conversations import search, start, subscriptions, links, commands
-from courts.bot.utils.utilities import get_mysql_conn, form_message_from_db_response
+from courts.bot.utils.utilities import get_mysql_conn
 
 # Enable logging
 # todo: implement logger config
@@ -74,7 +74,7 @@ async def get_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     result = cursor.fetchall()
     if len(result) > 0:
         row = result[0]
-        message += f"\nПривязан к аккаунту {row[0]}"
+        message += f"\nСвязан с аккаунтом {row[0]}"
     else:
         message += f"\nЧат не связан с аккаунтом сайта."
 

@@ -26,8 +26,8 @@ async def add_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 from dual
                 where not exists (select 1 from config_telegram_bot_subscriptions 
                     where account_id = %(account_id)s 
-                    and lower(case_num) = %(case_num)s
-                    and lower(court) = %(court)s
+                    and case_num = %(case_num)s
+                    and court = %(court)s
                     limit 1)""",
             {"case_num": case_num, "account_id": account_id, "court": court},
         )
@@ -74,7 +74,7 @@ async def remove_subscription(
             cursor.execute(
                 """delete from config_telegram_bot_subscriptions 
                     where account_id = %(account_id)s 
-                    and lower(case_num) = lower(%(case_num)s)
+                    and case_num = %(case_num)s
                     and (%(court)s = 'any'
                         or court = %(court)s
                         )
@@ -243,16 +243,17 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                         dm.hearing_time, dm.hearing_place, dm.case_info, dm.stage, dm.judge, 
                         dm.hearing_result, dm.decision_link, dm.case_link, dm.row_hash, dm.court_alias
                 from dm_v_court_cases dm
-                where lower(dm.case_num) = %(case_num)s
+                where dm.case_num = %(case_num)s
                     and (%(court)s = 'any'
                         or dm.court_alias like %(court_like)s
-                        or lower(dm.court) like %(court_like)s
+                        or dm.court like %(court_like)s
                     )
                     and dm.load_dttm > %(sub_dttm)s
                     and not exists (
                         select nlog.case_num
                         from config_telegram_bot_notification_log nlog
-                        where dm.case_num = nlog.case_num
+                        where nlog.account_id = %(account_id)s
+                            and dm.case_num = nlog.case_num
                             and dm.court_alias = nlog.court_alias
                             and dm.check_date = nlog.check_date
                             and coalesce(dm.order_num, 0) = coalesce(nlog.order_num, 0)
@@ -266,6 +267,7 @@ async def check_subscriptions(context: ContextTypes.DEFAULT_TYPE) -> None:
                 "court": subscription[2],
                 "court_like": f"%{subscription[2]}%",
                 "sub_dttm": subscription[3],
+                "account_id": subscription[0],
             },
         )
         result_1 = cursor.fetchall()
