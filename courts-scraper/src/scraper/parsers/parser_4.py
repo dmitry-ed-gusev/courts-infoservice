@@ -14,6 +14,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = WebClient()
+    session.headers = {
+        "user-agent": scraper_config.USER_AGENT,
+        "cache-control": "private, max-age=0, no-cache",
+    }
     result = []
     case_types = ["adm", "civil", "criminal", "public"]
     for case_type in case_types:

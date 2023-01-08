@@ -16,7 +16,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses mos gor sud page with paging"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = WebClient()
-    session.headers = {"user-agent": scraper_config.USER_AGENT}
+    session.headers = {
+        "user-agent": scraper_config.USER_AGENT,
+        "cache-control": "private, max-age=0, no-cache",
+    }
     result = []
     page_num = 1
     pages_total = 1

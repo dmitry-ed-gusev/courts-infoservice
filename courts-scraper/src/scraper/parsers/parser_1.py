@@ -15,7 +15,10 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
     """parses output page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
     session = WebClient()
-    session.headers = {"user-agent": scraper_config.USER_AGENT}
+    session.headers = {
+        "user-agent": scraper_config.USER_AGENT,
+        "cache-control": "private, max-age=0, no-cache",
+    }
     url = (
         court.get("link")
         + "/modules.php?name=sud_delo&srv_num="
