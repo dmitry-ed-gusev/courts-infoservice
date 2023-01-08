@@ -1,7 +1,7 @@
 import time
 
-from courts.config import selenium_config as reloaded_selenium_config
-from courts.utils.utilities import singleton, threadsafe_function
+from scraper.config import selenium_config as reloaded_selenium_config
+from scraper.utils.utilities import singleton, threadsafe_function
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager

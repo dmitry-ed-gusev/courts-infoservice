@@ -5,8 +5,9 @@ don't include in setup
 import os
 from datetime import datetime
 
-from courts.db import db_tools
-from courts.scraper import (
+from dotenv import load_dotenv
+
+from scraper.scraper import (
     parser_1,
     parser_2,
     parser_3,
@@ -17,8 +18,6 @@ from courts.scraper import (
     parser_8,
     parser_9,
 )
-from dotenv import load_dotenv
-from loguru import logger
 
 test_mode = 5
 check_date = "13.12.2022"

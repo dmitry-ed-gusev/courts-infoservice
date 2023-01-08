@@ -8,8 +8,8 @@
     Modified:
 """
 
-from courts.config.scraper_config import Config
-from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
+from scraper.config.scraper_config import Config
+from scraper.defaults import MSG_MODULE_ISNT_RUNNABLE
 
 config = Config()  # get single config instance
 

@@ -3,14 +3,15 @@ import re
 import time
 
 from bs4 import BeautifulSoup
-from courts.config import scraper_config, selenium_config
-from courts.db.db_tools import convert_data_to_df
-from courts.web.web_client import WebClient
 from loguru import logger
 from pandas import DataFrame
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
+
+from scraper.config import scraper_config, selenium_config
+from scraper.db.db_tools import convert_data_to_df
+from scraper.web.web_client import WebClient
 
 
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:

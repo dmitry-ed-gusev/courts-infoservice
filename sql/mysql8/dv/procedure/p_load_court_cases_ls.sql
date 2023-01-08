@@ -33,6 +33,8 @@ begin
 
     commit;
 
+    analyze table dv_court_cases_ls;
+
     create temporary table temp_dv_court_cases_ls_dates
     as
     select court_case_l_id,
@@ -44,9 +46,9 @@ begin
 		    end_dttm,
 		    max(begin_dttm) over (partition by court_case_l_id order by begin_dttm rows between 1 following and 1 following) as new_end_dttm
 	    from dv_court_cases_ls
+	    where end_dttm is null
     ) ds
-    where new_end_dttm is not null
-        and end_dttm is null;
+    where new_end_dttm is not null;
 
     update dv_court_cases_ls tgt
         join temp_dv_court_cases_ls_dates src
@@ -62,6 +64,8 @@ begin
     select distinct court_alias, check_date
     from stage_stg_court_cases stg;
 
+    analyze table temp_loaded_court_cases;
+
     create temporary table temp_exist_data
     as
     select distinct lhub.court_case_l_id
@@ -74,27 +78,29 @@ begin
                 and lhub.check_date = stg.check_date
                 and lhub.order_num = stg.order_num;
 
+    analyze table temp_exist_data;
+
     create temporary table temp_link_to_close
     as
-    select ccls.court_case_l_id, ccls.begin_dttm
+    select ccl.court_case_l_id
     from dv_court_cases_l ccl IGNORE INDEX (PRIMARY, court_case_id)
-	    join dv_court_cases_ls ccls IGNORE INDEX (PRIMARY)
-		    on ccl.court_case_l_id = ccls.court_case_l_id
 	    join dv_court_cases_h cch IGNORE INDEX (PRIMARY, idx_case_alias)
-	    	on ccl.court_case_id = cch.court_case_id
+	        on ccl.court_case_id = cch.court_case_id
 	    join temp_loaded_court_cases tlcc
 		    on ccl.check_date = tlcc.check_date
-		    	and cch.court_alias = tlcc.court_alias
-	    left join temp_exist_data ted
-		    on ccl.court_case_l_id = ted.court_case_l_id
-    where ted.court_case_l_id is null
-	    and ccls.end_dttm is null;
+		        and cch.court_alias = tlcc.court_alias
+    where not exists (
+        select 1 from temp_exist_data ted
+		where ccl.court_case_l_id = ted.court_case_l_id);
+
 
     update dv_court_cases_ls tgt
 	    join temp_link_to_close src
 		    on tgt.court_case_l_id = src.court_case_l_id
-			    and tgt.begin_dttm = src.begin_dttm
+			    and tgt.begin_dttm is null
     set tgt.end_dttm = now();
 
     commit;
+
+    analyze table dv_court_cases_ls;
 end;

@@ -17,6 +17,8 @@ decision_link varchar(500),
 case_link varchar(500),
 row_hash varchar(100),
 load_dttm datetime default now()
-);
+)
+ROW_FORMAT=COMPRESSED;
+
 
 alter table stage_stg_court_cases add index idx_court_alias_date (court_alias, check_date);

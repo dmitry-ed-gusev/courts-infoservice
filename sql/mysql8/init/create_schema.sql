@@ -1,1 +1,1 @@
-create schema if not exists courts_info character set utf8;
+create schema if not exists courts_info CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
