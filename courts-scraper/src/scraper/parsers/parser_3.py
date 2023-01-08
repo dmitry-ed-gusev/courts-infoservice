@@ -1,20 +1,38 @@
-"""scrap regular court pages from sudrf"""
+"""scrap js page of krasnodarskiy kraevoy sud"""
 import random
 import time
 
 from bs4 import BeautifulSoup
-from courts.config import scraper_config
-from courts.db.db_tools import convert_data_to_df
-from courts.web.web_client import WebClient
 from loguru import logger
 from pandas import DataFrame
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.firefox import GeckoDriverManager
+
+from scraper.config import scraper_config, selenium_config
+from scraper.db.db_tools import convert_data_to_df
 
 
 def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
-    """parses output page"""
+    """parses output js page"""
     check_date = court.get("check_date").strftime("%d.%m.%Y")
-    session = WebClient()
-    session.headers = {"user-agent": scraper_config.USER_AGENT}
+    result = []
+    firefox_service = Service(
+        GeckoDriverManager(version=selenium_config.gecko_version).install()
+    )
+    retries = 0
+    while True:
+        retries += 1
+        if retries > 4:
+            return DataFrame(), court, "failure"
+        try:
+            driver = webdriver.Firefox(
+                service=firefox_service, options=selenium_config.firefox_options
+            )
+            break
+        except:
+            time.sleep(3)
+    driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
     url = (
         court.get("link")
         + "/modules.php?name=sud_delo&srv_num="
@@ -23,15 +41,23 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
         + check_date
     )
     logger.debug(url)
-    time.sleep(random.randrange(0, 3))
-    try:
-        page = session.get(url)
-    except:
-        return DataFrame(), court, "failure"
-    result = []
-    soup = BeautifulSoup(page.content, "html.parser")
-    tables = soup.find_all("div", id="tablcont")
-    # <div id="tablcont">
+    retries = 0
+    while True:
+        time.sleep(random.randrange(0, 3))
+        retries += 1
+        if retries > 4:
+            driver.close()
+            driver.quit()
+            return DataFrame(), court, "failure"
+        try:
+            driver.get(url)
+            html = driver.page_source
+            break
+        except:
+            None
+    soup = BeautifulSoup(html, "html.parser")
+    tables = soup.find_all("div", id="resultTable")
+    # <div id="resultTable">
     for table in tables:
         section_name = ""
         sections = table.find_all("tr")
@@ -40,9 +66,9 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
             if idx == 0:
                 continue
             # setting new section
-            if len(section.contents) == 1:
+            if len(section.find_all("td")) == 1:
                 for idx_r, row in enumerate(section.find_all("td")):
-                    section_name = row.text
+                    section_name = row.text.title()
             # appending row
             else:
                 result_row = {"section_name": section_name}
@@ -61,27 +87,54 @@ def parse_page(court: dict) -> tuple[DataFrame, dict, str]:
                 result_row["court"] = court.get("title")
                 result_row["court_alias"] = court.get("alias")
                 result.append(result_row)
+    driver.close()
+    driver.quit()
     data_frame = convert_data_to_df(
-        result, scraper_config.SCRAPER_CONFIG[1]["stage_mapping"]
+        result, scraper_config.SCRAPER_CONFIG[3]["stage_mapping"]
     )
     return data_frame, court, "success"
 
 
 def get_links(link_config: dict) -> tuple[DataFrame, dict, str]:
     """extracts linked cases and case_uid"""
-    session = WebClient()
+    retries = 0
+    firefox_service = Service(
+        GeckoDriverManager(version=selenium_config.gecko_version).install()
+    )
+    while True:
+        retries += 1
+        if retries > 4:
+            return DataFrame(), link_config, "failure"
+        try:
+            driver = webdriver.Firefox(
+                service=firefox_service, options=selenium_config.firefox_options
+            )
+            break
+        except:
+            time.sleep(3)
+    driver.set_page_load_timeout(scraper_config.PAGE_LOAD_TIMEOUT)
     logger.debug(link_config["case_link"])
-    try:
-        page = session.get(link_config["case_link"])
-    except:
-        return DataFrame(), link_config, "failure"
-    soup = BeautifulSoup(page.content, "html.parser")
+    retries = 0
+    while True:
+        retries += 1
+        if retries > 4:
+            driver.close()
+            driver.quit()
+            return DataFrame(), link_config, "failure"
+        try:
+            driver.get(link_config["case_link"])
+            html = driver.page_source
+            driver.close()
+            driver.quit()
+            break
+        except:
+            None
+
+    soup = BeautifulSoup(html, "html.parser")
     rows = soup.find_all("tr")
     case_uid = link_case_num = link_court_name = None
     for row in rows:
         cols = row.find_all("td")
-        if len(cols) != 2:
-            continue
         if cols[0].text.strip() == "Уникальный идентификатор дела":
             case_uid = cols[1].text.strip()
         if cols[0].text.strip() == "Номер дела в первой инстанции":

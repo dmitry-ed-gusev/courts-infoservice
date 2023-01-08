@@ -18,4 +18,6 @@ begin
     )
     group by coalesce(stg.case_num, 'N/A'),
         stg.court_alias;
+
+    analyze table dv_court_cases_h;
 end;

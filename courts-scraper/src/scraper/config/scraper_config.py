@@ -13,8 +13,8 @@ import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from courts.defaults import MSG_MODULE_ISNT_RUNNABLE
-from courts.utils.utilities import singleton
+from scraper.defaults import MSG_MODULE_ISNT_RUNNABLE
+from scraper.utils.utilities import singleton
 
 # common constants/defaults
 CACHE_DIR_NAME: str = ".courts_scraper"  # cache dir name

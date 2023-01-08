@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from loguru import logger
-from pandas import DataFrame, read_sql_table, read_sql_query
+from pandas import DataFrame, read_sql_query, read_sql_table
 from sqlalchemy import Engine, create_engine
 from sqlalchemy import text as sa_text
 
-from court_cases_scraper.src.courts.config import db_init_config, scraper_config
+from scraper.config import db_init_config, scraper_config
 
 
 def get_db_engine(db_config: dict[str, str]) -> Engine:
@@ -90,7 +90,7 @@ def log_scrapped_court(
 
 
 def etl_load_court_cases_dq(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
+    """Loads data to stg and perform DQ tasks"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
     # lnd -> stg
@@ -107,7 +107,7 @@ def etl_load_court_cases_dq(db_config: dict[str, str]) -> None:
 
 
 def etl_load_court_cases_dv(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
+    """Loads data from stg to detail layer"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
     # stg -> dv
@@ -129,15 +129,16 @@ def etl_load_court_cases_dv(db_config: dict[str, str]) -> None:
 
 
 def etl_load_court_cases_dm(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
+    """Reloads data marts"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
-    # stg -> dv
     logger.info("Loading court cases data from dv to dm.")
     sql = sa_text("call dm_p_load_court_cases()")
+    logger.info("Calling " + sql.text)
     connection.execute(sql)
     connection.commit()
     sql = sa_text("call dm_p_fill_court_case_stats()")
+    logger.info("Calling " + sql.text)
     connection.execute(sql)
     connection.commit()
     connection.close()
@@ -145,7 +146,7 @@ def etl_load_court_cases_dm(db_config: dict[str, str]) -> None:
 
 
 def etl_load_case_links_dq(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
+    """Loads data to stg and perform DQ tasks"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
     # lnd -> stg
@@ -159,7 +160,7 @@ def etl_load_case_links_dq(db_config: dict[str, str]) -> None:
 
 
 def etl_load_case_links_dv(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
+    """Loads data from stg to detail layer"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
     # stg -> dv
@@ -186,7 +187,7 @@ def etl_load_case_links_dv(db_config: dict[str, str]) -> None:
 
 
 def etl_load_case_links_dm(db_config: dict[str, str]) -> None:
-    """calcs row hash in stage"""
+    """Reloads data marts"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
     # stg -> dv
@@ -198,22 +199,52 @@ def etl_load_case_links_dm(db_config: dict[str, str]) -> None:
     logger.info("Case links data loaded to dm.")
 
 
-def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
-    """reads court config from db"""
+def read_courts_config(
+    db_config: dict[str, str],
+    in_start_date: str | None = None,
+    in_end_date: str | None = None,
+    retry: bool = False,
+) -> list[dict[str, str]]:
+    """
+    reads court config from db
+    in dates override default load period
+    retry flag switches from default load to failed jobs reload mode
+    """
     engine = get_db_engine(db_config)
     connection = engine.connect()
 
     logger.debug("Connected. Reading courts config from DB.")
     result = []
-    sql = sa_text(
-        "select link, title, alias, server_num, parser_type, check_date "
-        "from config_v_courts_to_refresh "
-        "where check_date between :start_date and :end_date "
-        "order by check_date"
-    )
+    if in_start_date:
+        start_date = datetime.strptime(in_start_date, "%Y-%m-%d")
+    else:
+        start_date = datetime.now() - timedelta(days=scraper_config.RANGE_BACKWARD)
+
+    if in_end_date:
+        end_date = datetime.strptime(in_end_date, "%Y-%m-%d")
+    else:
+        end_date = datetime.now() + timedelta(days=scraper_config.RANGE_FORWARD)
+    if not retry:
+        sql = sa_text(
+            """
+            select link, title, alias, server_num, parser_type, check_date 
+            from config_v_courts_to_refresh 
+            where check_date between :start_date and :end_date 
+            union 
+            select link, title, alias, server_num, parser_type, check_date 
+            from config_v_courts_to_retry 
+            order by check_date
+            """
+        )
+    else:
+        sql = sa_text(
+            "select link, title, alias, server_num, parser_type, check_date "
+            "from config_v_courts_to_retry "
+            "order by check_date"
+        )
     params = {
-        "start_date": datetime.now() - timedelta(days=scraper_config.RANGE_BACKWARD),
-        "end_date": datetime.now() + timedelta(days=scraper_config.RANGE_FORWARD),
+        "start_date": start_date,
+        "end_date": end_date,
     }
     result_1 = connection.execute(sql, params)
     if result_1:
@@ -234,7 +265,7 @@ def read_courts_config(db_config: dict[str, str]) -> list[dict[str, str]]:
 
 
 def read_links_config(db_config: dict[str, str]) -> list[dict[str, str]]:
-    """reads court config from db"""
+    """reads court link config from db"""
     engine = get_db_engine(db_config)
     connection = engine.connect()
 
@@ -385,8 +416,8 @@ def switch_dm_tables(
     engine = get_db_engine(db_config)
     connection = engine.connect()
     connection_wrk = engine_wrk.connect()
-    logger.info("Renaming tables...")
     for table_dict in tables_list:
+        logger.info("Renaming table " + table_dict["table_name"])
         table = table_dict["table_name"]
         sql = sa_text(f"rename table {table}_old to {table}_new")
         connection.execute(sql)

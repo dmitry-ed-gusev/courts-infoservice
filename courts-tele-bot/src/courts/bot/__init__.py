@@ -6,4 +6,4 @@
 # VERSION = f"v1.0.0-ts{datetime}"
 # VERSION = "v1.0.0.ts{}".format(datetime)
 
-VERSION = "v1.0.0"
+VERSION = "v2.0.0"
